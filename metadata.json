@@ -1,0 +1,10 @@
+{
+  "name": "صلاتي - Salati Prayer Times & Quran",
+  "description": "تطبيق إسلامي حديث وشامل لمواقيت الصلاة الدقيقة، القرآن الكريم، الأذكار، والأدعية بتصميم هادئ ومريح.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
