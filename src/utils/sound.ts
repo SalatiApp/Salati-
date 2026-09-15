@@ -1,3 +1,5 @@
+import { triggerNativeHaptic } from './nativeAndroid';
+
 // Offline Web Audio API Synthesizer + Free Public Adhan Audio Player
 
 class SoundManager {
@@ -61,6 +63,7 @@ class SoundManager {
       osc.stop(ctx.currentTime + 0.05);
 
       // Trigger light haptic if supported
+      triggerNativeHaptic();
       if ('vibrate' in navigator) {
         navigator.vibrate(20);
       }

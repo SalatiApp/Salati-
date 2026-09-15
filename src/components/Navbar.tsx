@@ -1,7 +1,8 @@
 import React from 'react';
-import { Compass, Moon, Bell, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Compass, Moon, Bell, Volume2, VolumeX, Sparkles, Download } from 'lucide-react';
 import { getFormattedGregorianDate, getFormattedHijriDate } from '../utils/prayerCalculations';
 import { CityData } from '../types';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface NavbarProps {
   currentCity: CityData;
@@ -10,6 +11,7 @@ interface NavbarProps {
   onOpenSettings: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
+  onInstallClick?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,18 +21,30 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSettings,
   isMuted,
   onToggleMute,
+  onInstallClick,
 }) => {
   const hijriDate = getFormattedHijriDate();
   const gregorianDate = getFormattedGregorianDate();
+  const { isInstallable, isInstalled, install } = usePWAInstall();
+
+  const handleInstall = async () => {
+    if (onInstallClick) {
+      onInstallClick();
+    } else if (isInstallable) {
+      await install();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 bg-emerald-900/95 backdrop-blur-md text-white border-b border-emerald-800/60 shadow-sm">
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Brand & Location Info */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 border border-emerald-400/30 flex items-center justify-center shadow-inner text-amber-300 font-amiri text-2xl font-bold">
-            صلاتي
-          </div>
+          <img
+            src="/pwa-192x192.png"
+            alt="شعار صلاتي"
+            className="w-10 h-10 rounded-xl border border-amber-400/40 shadow-sm shrink-0 object-cover"
+          />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold tracking-tight text-white font-tajawal">صلاتي</h1>
@@ -50,6 +64,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-1.5">
+          {/* Quick PWA Install button if installable */}
+          {!isInstalled && isInstallable && (
+            <button
+              onClick={handleInstall}
+              className="px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 transition font-bold text-xs flex items-center gap-1 shadow-sm"
+              title="تثبيت التطبيق على الشاشة الرئيسية"
+            >
+              <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span className="hidden sm:inline">تثبيت</span>
+            </button>
+          )}
+
           {/* Audio toggle */}
           <button
             onClick={onToggleMute}

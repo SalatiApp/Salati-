@@ -17,6 +17,7 @@ import { DuasView } from './components/DuasView';
 import { SettingsView } from './components/SettingsView';
 import { QiblaModal } from './components/QiblaModal';
 import { TasbeehModal } from './components/TasbeehModal';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
 
 const DEFAULT_SETTINGS: UserSettings = {
   locationMode: 'city',
@@ -56,6 +57,23 @@ export default function App() {
 
   // Ref to track last triggered adhan minute to prevent duplicate alerts in the same minute
   const lastAlertMinuteRef = useRef<string>('');
+
+  // Support shortcut URL query parameters (e.g., from PWA home screen shortcuts)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'quran' || tabParam === 'azkar' || tabParam === 'duas' || tabParam === 'settings') {
+        setCurrentTab(tabParam);
+      } else if (tabParam === 'tasbeeh') {
+        setIsTasbeehOpen(true);
+      } else if (tabParam === 'qibla') {
+        setIsQiblaOpen(true);
+      }
+    } catch {
+      // ignore URL parsing errors in sandboxed contexts
+    }
+  }, []);
 
   // Save settings when changed
   const updateSettings = (newSettings: Partial<UserSettings>) => {
@@ -157,6 +175,9 @@ export default function App() {
         isMuted={isMuted}
         onToggleMute={() => setIsMuted(!isMuted)}
       />
+
+      {/* PWA Install & Offline Awareness Banner */}
+      <PWAInstallBanner />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-md w-full mx-auto px-4 py-4 safe-area-inset-top">

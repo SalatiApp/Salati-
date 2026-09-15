@@ -14,11 +14,17 @@ import {
   ChevronLeft,
   X,
   Sparkles,
-  Info
+  Info,
+  Download,
+  CheckCircle2,
+  Share,
+  PlusSquare,
+  Wifi
 } from 'lucide-react';
 import { CALCULATION_METHODS, CITIES } from '../data/cities';
 import { CalculationMethodKey, CityData, MadhabKey, UserSettings } from '../types';
 import { requestNotificationPermission, soundManager } from '../utils/sound';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface SettingsViewProps {
   settings: UserSettings;
@@ -40,6 +46,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [notificationPermissionGranted, setNotificationPermissionGranted] = useState<boolean>(
     'Notification' in window ? Notification.permission === 'granted' : false
   );
+  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
+  const [showIOSModal, setShowIOSModal] = useState(false);
 
   const filteredCities = CITIES.filter((c) =>
     c.nameAr.includes(citySearchQuery) ||
@@ -346,6 +354,139 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </p>
         </div>
       </div>
+
+      {/* PWA / Android Install Card */}
+      <div className="bg-white dark:bg-slate-800/90 rounded-3xl border border-slate-200 dark:border-slate-700/60 p-5 shadow-sm">
+        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-slate-700/40">
+          <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <Smartphone className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">تثبيت التطبيق (PWA)</h3>
+            <p className="text-xs text-slate-400">تثبيت على أندرويد وآيفون كبرنامج أصيل</p>
+          </div>
+        </div>
+
+        {isInstalled ? (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/60 flex items-center gap-3">
+            <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="text-right">
+              <span className="font-bold text-xs text-emerald-900 dark:text-emerald-200 block">
+                التطبيق مثبت بنجاح على هذا الجهاز!
+              </span>
+              <span className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                يعمل الآن في وضع الشاشة الكاملة المستقل (Standalone) مع دعم العمل بدون إنترنت وتنبيهات الأذان.
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-emerald-600" />
+                <span className="text-slate-700 dark:text-slate-300">شاشة كاملة بدون متصفح</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 flex items-center gap-2">
+                <Wifi className="w-4 h-4 text-emerald-600" />
+                <span className="text-slate-700 dark:text-slate-300">يعمل بدون اتصال بالإنترنت</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 flex items-center gap-2">
+                <Bell className="w-4 h-4 text-amber-500" />
+                <span className="text-slate-700 dark:text-slate-300">تنبيهات الأذان في وقتها</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span className="text-slate-700 dark:text-slate-300">أيقونة إسلامية أنيقة</span>
+              </div>
+            </div>
+
+            {isInstallable && (
+              <button
+                onClick={install}
+                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-xs hover:brightness-105 active:scale-98 transition flex items-center justify-center gap-2 shadow-md"
+              >
+                <Download className="w-4 h-4 stroke-[2.5]" />
+                <span>إضافة التطبيق إلى الشاشة الرئيسية (تثبيت مجاني)</span>
+              </button>
+            )}
+
+            {isIOS && (
+              <button
+                onClick={() => setShowIOSModal(true)}
+                className="w-full py-2.5 px-4 rounded-xl border border-emerald-600/30 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 font-semibold text-xs flex items-center justify-center gap-2 hover:bg-emerald-100/60 transition"
+              >
+                <Share className="w-4 h-4" />
+                <span>طريقة التثبيت على أجهزة iPhone / iPad</span>
+              </button>
+            )}
+
+            {!isInstallable && !isIOS && (
+              <p className="text-[11px] text-slate-400 text-center">
+                يمكنك أيضاً تثبيت التطبيق عبر قائمة متصفحك (ثلاث نقاط ⁝ في كروم ثم "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية").
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* iOS Modal in Settings */}
+      {showIOSModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-sm bg-slate-900 text-white rounded-3xl border border-emerald-700/60 p-5 shadow-2xl text-right">
+            <div className="flex items-center justify-between pb-3 border-b border-emerald-800/60 mb-4">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-amber-400" />
+                <h3 className="font-bold text-base font-tajawal">تثبيت على آيفون / آيباد</h3>
+              </div>
+              <button
+                onClick={() => setShowIOSModal(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-200 leading-relaxed font-tajawal">
+              <div className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                <div className="p-1.5 rounded-lg bg-emerald-900/60 text-amber-400 shrink-0">
+                  <Share className="w-4 h-4" />
+                </div>
+                <div>
+                  <strong className="text-white block">1. اضغط على زر المشاركة:</strong>
+                  <span>اضغط على أيقونة المشاركة (Share) في شريط متصفح Safari بالأسفل.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                <div className="p-1.5 rounded-lg bg-emerald-900/60 text-amber-400 shrink-0">
+                  <PlusSquare className="w-4 h-4" />
+                </div>
+                <div>
+                  <strong className="text-white block">2. اختر "إضافة إلى الصفحة الرئيسية":</strong>
+                  <span>مرر القائمة لأسفل ثم اختر (Add to Home Screen).</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                <div className="p-1.5 rounded-lg bg-emerald-900/60 text-amber-400 shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <strong className="text-white block">3. تجربة التطبيق كاملة:</strong>
+                  <span>سيعمل تطبيق صلاتي مباشرة كأي تطبيق أصيل وسريع.</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowIOSModal(false)}
+              className="mt-5 w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs transition"
+            >
+              حسناً، فهمت
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Zero Cost & Privacy Guarantee Badge */}
       <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-900 to-teal-950 text-white border border-emerald-700/50 shadow-sm text-right">
