@@ -1,5 +1,47 @@
 package com.salati.app;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.ContentResolver;
+import android.media.AudioAttributes;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
 
-public class MainActivity extends BridgeActivity {}
+public class MainActivity extends BridgeActivity {
+    public static final String ADHAN_CHANNEL_ID = "salati_adhan_channel";
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        createAdhanNotificationChannel();
+    }
+
+    private void createAdhanNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                NotificationChannel channel = new NotificationChannel(
+                    ADHAN_CHANNEL_ID,
+                    "أذان الصلاة",
+                    NotificationManager.IMPORTANCE_HIGH
+                );
+                channel.setDescription("تنبيهات مواقيت الصلاة مع صوت الأذان");
+                channel.enableVibration(true);
+                channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+
+                Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/raw/adhan");
+                AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .build();
+
+                channel.setSound(soundUri, audioAttributes);
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+}
+

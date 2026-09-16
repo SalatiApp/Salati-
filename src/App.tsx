@@ -8,6 +8,7 @@ import { CITIES } from './data/cities';
 import { CityData, TabType, UserSettings } from './types';
 import { calculateDailyPrayers } from './utils/prayerCalculations';
 import { sendPrayerNotification, soundManager } from './utils/sound';
+import { scheduleAutomaticAdhanAlarms } from './utils/prayerAlarmScheduler';
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
 import { PrayerTimesView } from './components/PrayerTimesView';
@@ -135,7 +136,20 @@ export default function App() {
     return calculateDailyPrayers(currentCity.latitude, currentCity.longitude, now, settings);
   }, [currentCity, now, settings]);
 
-  // Check if current time matches any prayer time to fire Adhan notification
+  // Schedule automatic Adhan exact alarms on Android (plays local adhan.mp3 when closed/locked)
+  useEffect(() => {
+    scheduleAutomaticAdhanAlarms(currentCity.latitude, currentCity.longitude, settings);
+  }, [
+    currentCity.latitude,
+    currentCity.longitude,
+    settings.calculationMethod,
+    settings.madhab,
+    settings.adhanType,
+    settings.prayerAlerts,
+    settings.timeFormat24,
+  ]);
+
+  // Check if current time matches any prayer time to fire Adhan notification (foreground)
   useEffect(() => {
     const currentMinuteKey = `${now.getHours()}:${now.getMinutes()}`;
     if (lastAlertMinuteRef.current === currentMinuteKey) return;

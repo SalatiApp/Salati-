@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { initPrayerAlarmChannel, requestPrayerAlarmPermissions } from './prayerAlarmScheduler';
 
 export const isNativeAndroid = (): boolean => {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
@@ -16,6 +17,14 @@ export const initNativeAndroid = async () => {
     await StatusBar.setBackgroundColor({ color: '#064e3b' });
   } catch (e) {
     console.warn('Status bar config error:', e);
+  }
+
+  try {
+    // Initialize notification channel for Adhan and request notification & alarm permissions
+    await initPrayerAlarmChannel();
+    await requestPrayerAlarmPermissions();
+  } catch (e) {
+    console.warn('Adhan notification initialization error:', e);
   }
 
   try {
