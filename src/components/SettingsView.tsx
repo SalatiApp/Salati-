@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Compass, 
@@ -10,7 +10,6 @@ import {
   ShieldCheck, 
   Smartphone, 
   Clock, 
-  Search, 
   ChevronLeft,
   X,
   Sparkles,
@@ -21,12 +20,13 @@ import {
   PlusSquare,
   Wifi
 } from 'lucide-react';
-import { CALCULATION_METHODS, CITIES } from '../data/cities';
+import { CALCULATION_METHODS } from '../data/cities';
 import { CalculationMethodKey, CityData, MadhabKey, UserSettings } from '../types';
 import { checkNotificationPermission, requestNotificationPermission, soundManager } from '../utils/sound';
 import { scheduleAutomaticAdhanAlarms } from '../utils/prayerAlarmScheduler';
 import { Capacitor } from '@capacitor/core';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { CitySelectionModal } from './CitySelectionModal';
 
 interface SettingsViewProps {
   settings: UserSettings;
@@ -42,8 +42,6 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
   onSelectCity,
 }) => {
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
-  const [citySearchQuery, setCitySearchQuery] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const [gpsStatus, setGpsStatus] = useState<string | null>(null);
   const [isPlayingTestAdhan, setIsPlayingTestAdhan] = useState(false);
   const [notificationPermissionGranted, setNotificationPermissionGranted] = useState<boolean>(() => {
@@ -54,20 +52,6 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
       ? Notification.permission === 'granted'
       : false;
   });
-
-  // Focus and initialize city search input when modal opens
-  useEffect(() => {
-    if (isCityModalOpen) {
-      setCitySearchQuery('');
-      if (searchInputRef.current) {
-        searchInputRef.current.value = '';
-      }
-      const timer = setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [isCityModalOpen]);
 
   // Check notification permission (via @capacitor/local-notifications on Android)
   useEffect(() => {
@@ -96,51 +80,6 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
   }, []);
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSModal, setShowIOSModal] = useState(false);
-
-  // Normalize Arabic letters and diacritics to ensure resilient city searches
-  const normalizeText = (text: string) => {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[أإآ]/g, 'ا')
-      .replace(/[ة]/g, 'ه')
-      .replace(/[ى]/g, 'ي')
-      .replace(/[\u064B-\u065F]/g, '');
-  };
-
-  const filteredCities = useMemo(() => {
-    const rawQuery = citySearchQuery.trim();
-    if (!rawQuery) {
-      return CITIES;
-    }
-    const query = normalizeText(rawQuery);
-    const matches = CITIES.filter((c) => {
-      const nameAr = normalizeText(c.nameAr);
-      const nameEn = (c.nameEn || '').toLowerCase();
-      const countryAr = normalizeText(c.countryAr || '');
-      const countryEn = (c.countryEn || '').toLowerCase();
-      return (
-        nameAr.includes(query) ||
-        nameEn.includes(query) ||
-        countryAr.includes(query) ||
-        countryEn.includes(query)
-      );
-    });
-
-    return matches.sort((a, b) => {
-      const aName = normalizeText(a.nameAr);
-      const bName = normalizeText(b.nameAr);
-      const aExact = aName === query ? 1 : 0;
-      const bExact = bName === query ? 1 : 0;
-      if (aExact !== bExact) return bExact - aExact;
-
-      const aStarts = aName.startsWith(query) ? 1 : 0;
-      const bStarts = bName.startsWith(query) ? 1 : 0;
-      if (aStarts !== bStarts) return bStarts - aStarts;
-
-      return 0;
-    });
-  }, [citySearchQuery]);
 
   const handleUseGps = () => {
     if (!('geolocation' in navigator)) {
@@ -227,10 +166,7 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
           </div>
 
           <button
-            onClick={() => {
-              setCitySearchQuery('');
-              setIsCityModalOpen(true);
-            }}
+            onClick={() => setIsCityModalOpen(true)}
             className="px-3.5 py-2 rounded-xl bg-emerald-700 text-white font-semibold text-xs hover:bg-emerald-800 transition shadow-sm"
           >
             تغيير المدينة
@@ -597,89 +533,12 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* City Selection Modal */}
-      {isCityModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl p-5 max-h-[85vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="font-bold text-base font-tajawal">اختر مدينتك</h3>
-              <button
-                onClick={() => setIsCityModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="my-3 relative">
-              <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
-              <input
-                id="city-search-input"
-                name="citySearch"
-                ref={searchInputRef}
-                type="text"
-                defaultValue=""
-                onInput={(e) => setCitySearchQuery((e.target as HTMLInputElement).value)}
-                onChange={(e) => setCitySearchQuery(e.target.value)}
-                onCompositionEnd={(e) => setCitySearchQuery((e.target as HTMLInputElement).value)}
-                placeholder="ابحث عن مدينة أو دولة..."
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                className="w-full pr-10 pl-9 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 caret-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 transition"
-                style={{ color: 'inherit' }}
-              />
-              {citySearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCitySearchQuery('');
-                    if (searchInputRef.current) {
-                      searchInputRef.current.value = '';
-                      searchInputRef.current.focus();
-                    }
-                  }}
-                  className="absolute left-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-lg transition"
-                  aria-label="مسح البحث"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Cities List */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1">
-              {filteredCities.map((city) => (
-                <button
-                  key={city.id}
-                  onClick={() => {
-                    onSelectCity(city);
-                    setIsCityModalOpen(false);
-                  }}
-                  className={`w-full py-3 px-3 flex items-center justify-between hover:bg-emerald-50/60 dark:hover:bg-slate-800 transition rounded-xl text-right ${
-                    currentCity.id === city.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold' : ''
-                  }`}
-                >
-                  <div>
-                    <span className="font-bold text-sm block">{city.nameAr}</span>
-                    <span className="text-xs text-slate-400">{city.countryAr} • {city.nameEn}</span>
-                  </div>
-                  {currentCity.id === city.id && (
-                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  )}
-                </button>
-              ))}
-
-              {filteredCities.length === 0 && (
-                <div className="text-center py-8 text-slate-400 text-xs font-tajawal">
-                  لم يتم العثور على مدينة مطابقة لبحثك
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <CitySelectionModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+        currentCityId={currentCity.id}
+        onSelectCity={onSelectCity}
+      />
     </div>
   );
 };
