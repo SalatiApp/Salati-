@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useMemo, useDeferredValue, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Search, X, Check } from 'lucide-react';
 import { CITIES } from '../data/cities';
 import { CityData } from '../types';
@@ -82,7 +82,6 @@ export const CitySelectionModal: React.FC<CitySelectionModalProps> = React.memo(
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(30);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const deferredQuery = useDeferredValue(searchQuery);
 
   // Focus and reset when modal opens
   useEffect(() => {
@@ -99,11 +98,11 @@ export const CitySelectionModal: React.FC<CitySelectionModalProps> = React.memo(
   // Reset pagination on query change
   useEffect(() => {
     setVisibleCount(30);
-  }, [deferredQuery]);
+  }, [searchQuery]);
 
   const normalizedQuery = useMemo(() => {
-    return normalizeSearchText(deferredQuery);
-  }, [deferredQuery]);
+    return normalizeSearchText(searchQuery);
+  }, [searchQuery]);
 
   // Ultra-fast linear filter & priority ranking using pre-computed fields
   const filteredCities = useMemo(() => {
@@ -183,6 +182,8 @@ export const CitySelectionModal: React.FC<CitySelectionModalProps> = React.memo(
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onInput={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
+            onCompositionEnd={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
             placeholder="ابحث عن مدينة أو دولة..."
             autoComplete="off"
             autoCorrect="off"
