@@ -3,12 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from 'react';
+
 import { CITIES } from './data/cities';
 import { CityData, TabType, UserSettings } from './types';
 import { calculateDailyPrayers } from './utils/prayerCalculations';
 import { sendPrayerNotification, soundManager } from './utils/sound';
 import { scheduleAutomaticAdhanAlarms } from './utils/prayerAlarmScheduler';
+
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
 import { PrayerTimesView } from './components/PrayerTimesView';
@@ -26,6 +34,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   calculationMethod: 'UmmAlQura',
   madhab: 'shafi',
   adhanType: 'full',
+
   prayerAlerts: {
     fajr: true,
     dhuhr: true,
@@ -33,22 +42,29 @@ const DEFAULT_SETTINGS: UserSettings = {
     maghrib: true,
     isha: true,
   },
+
   quranFontSize: 24,
   quranReadingMode: 'day',
   timeFormat24: false,
   theme: 'emerald',
 
-  // Azkar notifications
   morningAzkarAlerts: true,
   eveningAzkarAlerts: true,
 };
 
 export default function App() {
-  // Load settings from local storage
   const [settings, setSettings] = useState<UserSettings>(() => {
     try {
       const saved = localStorage.getItem('salati_settings');
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+
+      if (saved) {
+        return {
+          ...DEFAULT_SETTINGS,
+          ...JSON.parse(saved),
+        };
+      }
+
+      return DEFAULT_SETTINGS;
     } catch {
       return DEFAULT_SETTINGS;
     }
@@ -60,16 +76,23 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [now, setNow] = useState<Date>(new Date());
 
-  // Ref to track last triggered adhan minute to prevent duplicate alerts in the same minute
   const lastAlertMinuteRef = useRef<string>('');
 
-  // Support shortcut URL query parameters (e.g., from PWA home screen shortcuts)
+  // ---------------------------------------------------------
+  // Handle shortcut URLs
+  // ---------------------------------------------------------
+
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
 
-      if (tabParam === 'quran' || tabParam === 'azkar' || tabParam === 'duas' || tabParam === 'settings') {
+      if (
+        tabParam === 'quran' ||
+        tabParam === 'azkar' ||
+        tabParam === 'duas' ||
+        tabParam === 'settings'
+      ) {
         setCurrentTab(tabParam);
       } else if (tabParam === 'tasbeeh') {
         setIsTasbeehOpen(true);
@@ -77,22 +100,42 @@ export default function App() {
         setIsQiblaOpen(true);
       }
     } catch {
-      // ignore URL parsing errors in sandboxed contexts
+      // Ignore URL parsing errors.
     }
   }, []);
 
-  // Save settings when changed
-  const updateSettings = useCallback((newSettings: Partial<UserSettings>) => {
-    setSettings((prev) => {
-      const updated = { ...prev, ...newSettings };
-      localStorage.setItem('salati_settings', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  // ---------------------------------------------------------
+  // Save settings
+  // ---------------------------------------------------------
 
-  // Find current city data
+  const updateSettings = useCallback(
+    (newSettings: Partial<UserSettings>) => {
+      setSettings((prev) => {
+        const updated = {
+          ...prev,
+          ...newSettings,
+        };
+
+        localStorage.setItem(
+          'salati_settings',
+          JSON.stringify(updated)
+        );
+
+        return updated;
+      });
+    },
+    []
+  );
+
+  // ---------------------------------------------------------
+  // Current city
+  // ---------------------------------------------------------
+
   const currentCity: CityData = useMemo(() => {
-    if (settings.locationMode === 'gps' && settings.customCoordinates) {
+    if (
+      settings.locationMode === 'gps' &&
+      settings.customCoordinates
+    ) {
       return {
         id: 'gps_custom',
         nameAr: settings.customCoordinates.cityName,
@@ -101,13 +144,17 @@ export default function App() {
         countryEn: 'GPS Location',
         latitude: settings.customCoordinates.latitude,
         longitude: settings.customCoordinates.longitude,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezone:
+          Intl.DateTimeFormat().resolvedOptions().timeZone,
         defaultMethod: settings.calculationMethod,
       };
     }
 
-    const found = CITIES.find((c) => c.id === settings.selectedCityId);
-    return found || CITIES[0]; // Makkah default
+    const found = CITIES.find(
+      (city) => city.id === settings.selectedCityId
+    );
+
+    return found || CITIES[0];
   }, [
     settings.locationMode,
     settings.selectedCityId,
@@ -115,7 +162,10 @@ export default function App() {
     settings.calculationMethod,
   ]);
 
-  // Handle city selection
+  // ---------------------------------------------------------
+  // Select city
+  // ---------------------------------------------------------
+
   const handleSelectCity = useCallback((city: CityData) => {
     setSettings((prev) => {
       const updated: UserSettings = {
@@ -127,22 +177,35 @@ export default function App() {
           prev.calculationMethod,
       };
 
-      localStorage.setItem('salati_settings', JSON.stringify(updated));
+      localStorage.setItem(
+        'salati_settings',
+        JSON.stringify(updated)
+      );
+
       return updated;
     });
   }, []);
 
-  // Handle per-prayer notification alert toggle
-  const handleUpdatePrayerAlert = (prayerId: keyof UserSettings['prayerAlerts']) => {
-    updateSettings({
-      prayerAlerts: {
-        ...settings.prayerAlerts,
-        [prayerId]: !settings.prayerAlerts[prayerId],
-      },
-    });
-  };
+  // ---------------------------------------------------------
+  // Prayer alert toggle
+  // ---------------------------------------------------------
 
-  // Second interval timer to keep prayer times & countdowns exact
+  const handleUpdatePrayerAlert = useCallback(
+    (prayerId: keyof UserSettings['prayerAlerts']) => {
+      updateSettings({
+        prayerAlerts: {
+          ...settings.prayerAlerts,
+          [prayerId]: !settings.prayerAlerts[prayerId],
+        },
+      });
+    },
+    [settings.prayerAlerts, updateSettings]
+  );
+
+  // ---------------------------------------------------------
+  // Clock
+  // ---------------------------------------------------------
+
   useEffect(() => {
     const timer = setInterval(() => {
       setNow(new Date());
@@ -151,7 +214,10 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // ---------------------------------------------------------
   // Calculate prayer times
+  // ---------------------------------------------------------
+
   const prayerData = useMemo(() => {
     return calculateDailyPrayers(
       currentCity.latitude,
@@ -161,8 +227,10 @@ export default function App() {
     );
   }, [currentCity, now, settings]);
 
-  // Schedule automatic Adhan exact alarms on Android
-  // and automatic Azkar notifications.
+  // ---------------------------------------------------------
+  // Automatic prayer + Azkar notifications
+  // ---------------------------------------------------------
+
   useEffect(() => {
     scheduleAutomaticAdhanAlarms(
       currentCity.latitude,
@@ -177,30 +245,168 @@ export default function App() {
     settings.adhanType,
     settings.prayerAlerts,
     settings.timeFormat24,
-
-    // Re-schedule Azkar notifications when toggles change
     settings.morningAzkarAlerts,
     settings.eveningAzkarAlerts,
   ]);
 
-  // Check if current time matches any prayer time to fire Adhan notification (foreground)
-  useEffect(() => {
-    const currentMinuteKey = `${now.getHours()}:${now.getMinutes()}`;
+  // ---------------------------------------------------------
+  // Foreground prayer alert
+  // ---------------------------------------------------------
 
-    if (lastAlertMinuteRef.current === currentMinuteKey) return;
+  useEffect(() => {
+    const currentMinuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
+
+    if (lastAlertMinuteRef.current === currentMinuteKey) {
+      return;
+    }
+
+    let prayerTriggered = false;
 
     prayerData.prayers.forEach((prayer) => {
-      if (prayer.id === 'sunrise') return;
+      if (prayer.id === 'sunrise') {
+        return;
+      }
 
-      const isEnabled =
-        settings.prayerAlerts[
-          prayer.id as keyof UserSettings['prayerAlerts']
-        ];
+      const prayerId =
+        prayer.id as keyof UserSettings['prayerAlerts'];
 
-      if (!isEnabled) return;
+      const isEnabled = settings.prayerAlerts[prayerId];
+
+      if (!isEnabled) {
+        return;
+      }
 
       const pTime = prayer.time;
 
-      // If prayer is in this exact minute
-      if (
-        p
+      const sameMinute =
+        pTime.getHours() === now.getHours() &&
+        pTime.getMinutes() === now.getMinutes();
+
+      if (!sameMinute) {
+        return;
+      }
+
+      if (prayerTriggered) {
+        return;
+      }
+
+      prayerTriggered = true;
+      lastAlertMinuteRef.current = currentMinuteKey;
+
+      if (settings.adhanType === 'silent') {
+        return;
+      }
+
+      if (isMuted) {
+        return;
+      }
+
+      try {
+        soundManager.playAdhan(settings.adhanType);
+      } catch {
+        // Ignore sound errors.
+      }
+
+      try {
+        sendPrayerNotification(
+          prayer.nameAr,
+          prayer.timeFormatted
+        );
+      } catch {
+        // Ignore notification errors.
+      }
+    });
+  }, [
+    now,
+    prayerData.prayers,
+    settings.prayerAlerts,
+    settings.adhanType,
+    isMuted,
+  ]);
+
+  // ---------------------------------------------------------
+  // Tab content
+  // ---------------------------------------------------------
+
+  const renderCurrentView = () => {
+    switch (currentTab) {
+      case 'quran':
+        return <QuranView settings={settings} />;
+
+      case 'azkar':
+        return <AzkarView />;
+
+      case 'duas':
+        return <DuasView />;
+
+      case 'settings':
+        return (
+          <SettingsView
+            settings={settings}
+            updateSettings={updateSettings}
+            currentCity={currentCity}
+            onSelectCity={handleSelectCity}
+          />
+        );
+
+      case 'prayers':
+      default:
+        return (
+          <PrayerTimesView
+            prayerData={prayerData}
+            settings={settings}
+            updateSettings={updateSettings}
+            onUpdatePrayerAlert={handleUpdatePrayerAlert}
+            currentCity={currentCity}
+            isMuted={isMuted}
+            setIsMuted={setIsMuted}
+          />
+        );
+    }
+  };
+
+  // ---------------------------------------------------------
+  // App UI
+  // ---------------------------------------------------------
+
+  return (
+    <div
+      className={`min-h-screen ${
+        settings.theme === 'dark'
+          ? 'bg-slate-950 text-white'
+          : settings.theme === 'midnight'
+          ? 'bg-[#07111f] text-white'
+          : 'bg-slate-50 text-slate-900'
+      }`}
+    >
+      <Navbar
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        onOpenQibla={() => setIsQiblaOpen(true)}
+        onOpenTasbeeh={() => setIsTasbeehOpen(true)}
+      />
+
+      <main className="pb-24">
+        {renderCurrentView()}
+      </main>
+
+      <BottomNav
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        onOpenTasbeeh={() => setIsTasbeehOpen(true)}
+      />
+
+      <QiblaModal
+        isOpen={isQiblaOpen}
+        onClose={() => setIsQiblaOpen(false)}
+      />
+
+      <TasbeehModal
+        isOpen={isTasbeehOpen}
+        onClose={() => setIsTasbeehOpen(false)}
+      />
+
+      <PWAInstallBanner />
+    </div>
+  );
+}
