@@ -37,6 +37,10 @@ const DEFAULT_SETTINGS: UserSettings = {
   quranReadingMode: 'day',
   timeFormat24: false,
   theme: 'emerald',
+
+  // Azkar notifications
+  morningAzkarAlerts: true,
+  eveningAzkarAlerts: true,
 };
 
 export default function App() {
@@ -64,6 +68,7 @@ export default function App() {
     try {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
+
       if (tabParam === 'quran' || tabParam === 'azkar' || tabParam === 'duas' || tabParam === 'settings') {
         setCurrentTab(tabParam);
       } else if (tabParam === 'tasbeeh') {
@@ -100,9 +105,15 @@ export default function App() {
         defaultMethod: settings.calculationMethod,
       };
     }
+
     const found = CITIES.find((c) => c.id === settings.selectedCityId);
     return found || CITIES[0]; // Makkah default
-  }, [settings.locationMode, settings.selectedCityId, settings.customCoordinates, settings.calculationMethod]);
+  }, [
+    settings.locationMode,
+    settings.selectedCityId,
+    settings.customCoordinates,
+    settings.calculationMethod,
+  ]);
 
   // Handle city selection
   const handleSelectCity = useCallback((city: CityData) => {
@@ -111,8 +122,11 @@ export default function App() {
         ...prev,
         locationMode: 'city',
         selectedCityId: city.id,
-        calculationMethod: (city.defaultMethod as UserSettings['calculationMethod']) || prev.calculationMethod,
+        calculationMethod:
+          (city.defaultMethod as UserSettings['calculationMethod']) ||
+          prev.calculationMethod,
       };
+
       localStorage.setItem('salati_settings', JSON.stringify(updated));
       return updated;
     });
@@ -133,17 +147,28 @@ export default function App() {
     const timer = setInterval(() => {
       setNow(new Date());
     }, 1000);
+
     return () => clearInterval(timer);
   }, []);
 
   // Calculate prayer times
   const prayerData = useMemo(() => {
-    return calculateDailyPrayers(currentCity.latitude, currentCity.longitude, now, settings);
+    return calculateDailyPrayers(
+      currentCity.latitude,
+      currentCity.longitude,
+      now,
+      settings
+    );
   }, [currentCity, now, settings]);
 
-  // Schedule automatic Adhan exact alarms on Android (plays local adhan.mp3 when closed/locked)
+  // Schedule automatic Adhan exact alarms on Android
+  // and automatic Azkar notifications.
   useEffect(() => {
-    scheduleAutomaticAdhanAlarms(currentCity.latitude, currentCity.longitude, settings);
+    scheduleAutomaticAdhanAlarms(
+      currentCity.latitude,
+      currentCity.longitude,
+      settings
+    );
   }, [
     currentCity.latitude,
     currentCity.longitude,
@@ -152,106 +177,30 @@ export default function App() {
     settings.adhanType,
     settings.prayerAlerts,
     settings.timeFormat24,
+
+    // Re-schedule Azkar notifications when toggles change
+    settings.morningAzkarAlerts,
+    settings.eveningAzkarAlerts,
   ]);
 
   // Check if current time matches any prayer time to fire Adhan notification (foreground)
   useEffect(() => {
     const currentMinuteKey = `${now.getHours()}:${now.getMinutes()}`;
+
     if (lastAlertMinuteRef.current === currentMinuteKey) return;
 
     prayerData.prayers.forEach((prayer) => {
       if (prayer.id === 'sunrise') return;
-      const isEnabled = settings.prayerAlerts[prayer.id as keyof UserSettings['prayerAlerts']];
+
+      const isEnabled =
+        settings.prayerAlerts[
+          prayer.id as keyof UserSettings['prayerAlerts']
+        ];
+
       if (!isEnabled) return;
 
       const pTime = prayer.time;
+
       // If prayer is in this exact minute
       if (
-        pTime.getFullYear() === now.getFullYear() &&
-        pTime.getMonth() === now.getMonth() &&
-        pTime.getDate() === now.getDate() &&
-        pTime.getHours() === now.getHours() &&
-        pTime.getMinutes() === now.getMinutes()
-      ) {
-        lastAlertMinuteRef.current = currentMinuteKey;
-        // Fire adhan sound and browser notification
-        if (!isMuted) {
-          soundManager.playAdhan(settings.adhanType);
-        }
-        sendPrayerNotification(prayer.nameAr);
-      }
-    });
-  }, [now, prayerData.prayers, settings.prayerAlerts, settings.adhanType, isMuted]);
-
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-tajawal antialiased">
-      {/* Top Navbar */}
-      <Navbar
-        currentCity={currentCity}
-        onOpenQibla={() => setIsQiblaOpen(true)}
-        onOpenTasbeeh={() => setIsTasbeehOpen(true)}
-        onOpenSettings={() => setCurrentTab('settings')}
-        isMuted={isMuted}
-        onToggleMute={() => setIsMuted(!isMuted)}
-      />
-
-      {/* PWA Install & Offline Awareness Banner */}
-      <PWAInstallBanner />
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-md w-full mx-auto px-4 py-4 safe-area-inset-top">
-        {currentTab === 'prayers' && (
-          <PrayerTimesView
-            prayers={prayerData.prayers}
-            nextPrayerItem={prayerData.nextPrayerItem}
-            timeRemainingSeconds={prayerData.timeRemainingSeconds}
-            progressPercent={prayerData.progressPercent}
-            currentCity={currentCity}
-            settings={settings}
-            onUpdatePrayerAlert={handleUpdatePrayerAlert}
-            onOpenQibla={() => setIsQiblaOpen(true)}
-            onOpenTasbeeh={() => setIsTasbeehOpen(true)}
-            onOpenSettings={() => setCurrentTab('settings')}
-          />
-        )}
-
-        {currentTab === 'quran' && (
-          <QuranView initialFontSize={settings.quranFontSize} />
-        )}
-
-        {currentTab === 'azkar' && (
-          <AzkarView />
-        )}
-
-        {currentTab === 'duas' && (
-          <DuasView />
-        )}
-
-        {currentTab === 'settings' && (
-          <SettingsView
-            settings={settings}
-            currentCity={currentCity}
-            onUpdateSettings={updateSettings}
-            onSelectCity={handleSelectCity}
-          />
-        )}
-      </main>
-
-      {/* Bottom Navigation */}
-      <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} />
-
-      {/* Qibla Direction Compass Modal */}
-      <QiblaModal
-        isOpen={isQiblaOpen}
-        onClose={() => setIsQiblaOpen(false)}
-        currentCity={currentCity}
-      />
-
-      {/* Electronic Tasbeeh Modal */}
-      <TasbeehModal
-        isOpen={isTasbeehOpen}
-        onClose={() => setIsTasbeehOpen(false)}
-      />
-    </div>
-  );
-}
+        p
