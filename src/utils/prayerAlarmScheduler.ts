@@ -1,26 +1,32 @@
 import { Capacitor } from '@capacitor/core';
-import { LocalNotifications, LocalNotificationSchema } from '@capacitor/local-notifications';
+import {
+  LocalNotifications,
+  LocalNotificationSchema,
+} from '@capacitor/local-notifications';
 import { Coordinates, PrayerTimes } from 'adhan';
 import { UserSettings } from '../types';
 import { getCalculationParameters } from './prayerCalculations';
 
 export const ADHAN_CHANNEL_ID = 'salati_adhan_channel';
+export const AZKAR_CHANNEL_ID = 'salati_azkar_channel';
 
-/**
- * Initializes the Android notification channel configured with local adhan.mp3
- */
+const PRAYER_NOTIFICATION_START_ID = 1000;
+const PRAYER_NOTIFICATION_END_ID = 1999;
+
+const MORNING_AZKAR_START_ID = 2000;
+const EVENING_AZKAR_START_ID = 3000;
+
 export async function initPrayerAlarmChannel(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
   try {
-    // Register the channel with sound pointing to the bundled adhan.mp3 in res/raw/
     await LocalNotifications.createChannel({
       id: ADHAN_CHANNEL_ID,
       name: 'أذان الصلاة',
       description: 'تنبيهات مواقيت الصلاة مع صوت الأذان',
-      importance: 5, // High importance (heads-up notification & sound)
-      visibility: 1, // Public visibility on lockscreen
-      sound: 'adhan.mp3', // Matches res/raw/adhan.mp3 on Android
+      importance: 5,
+      visibility: 1,
+      sound: 'adhan.mp3',
       vibration: true,
       lights: true,
       lightColor: '#059669',
@@ -30,9 +36,25 @@ export async function initPrayerAlarmChannel(): Promise<void> {
   }
 }
 
-/**
- * Check notification permissions using @capacitor/local-notifications on Android
- */
+export async function initAzkarNotificationChannel(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+
+  try {
+    await LocalNotifications.createChannel({
+      id: AZKAR_CHANNEL_ID,
+      name: 'أذكار الصباح والمساء',
+      description: 'تنبيهات يومية لأذكار الصباح والمساء',
+      importance: 4,
+      visibility: 1,
+      vibration: true,
+      lights: true,
+      lightColor: '#059669',
+    });
+  } catch (err) {
+    console.warn('Failed to initialize Azkar notification channel:', err);
+  }
+}
+
 export async function checkPrayerAlarmPermissions(): Promise<boolean> {
   if (Capacitor.isNativePlatform()) {
     try {
@@ -44,16 +66,13 @@ export async function checkPrayerAlarmPermissions(): Promise<boolean> {
     }
   }
 
-  // Browser fallback
   if (typeof window !== 'undefined' && 'Notification' in window) {
     return Notification.permission === 'granted';
   }
+
   return false;
 }
 
-/**
- * Request notification and exact alarm permissions on Android
- */
 export async function requestPrayerAlarmPermissions(): Promise<boolean> {
   if (Capacitor.isNativePlatform()) {
     try {
@@ -65,16 +84,17 @@ export async function requestPrayerAlarmPermissions(): Promise<boolean> {
     }
   }
 
-  // Browser fallback
   if (typeof window !== 'undefined' && 'Notification' in window) {
     if (Notification.permission === 'granted') {
       return true;
     }
+
     if (Notification.permission !== 'denied') {
       const perm = await Notification.requestPermission();
       return perm === 'granted';
     }
   }
+
   return false;
 }
 
@@ -92,10 +112,121 @@ const PRAYERS: PrayerDef[] = [
   { key: 'isha', nameAr: 'العشاء', index: 5 },
 ];
 
-/**
- * Schedules exact alarms for all enabled prayers over the next 7 days.
- * When the alarm triggers, Android wakes up even if closed/locked and plays adhan.mp3.
- */
+async function cancelPrayerNotifications(): Promise<void> {
+  try {
+    const pending = await LocalNotifications.getPending();
+
+    const prayerNotifications = pending.notifications
+      .filter(
+        (notification) =>
+          notification.id >= PRAYER_NOTIFICATION_START_ID &&
+          notification.id <= PRAYER_NOTIFICATION_END_ID
+      )
+      .map((notification) => ({ id: notification.id }));
+
+    if (prayerNotifications.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: prayerNotifications,
+      });
+    }
+  } catch (err) {
+    console.warn('Failed to cancel prayer notifications:', err);
+  }
+}
+
+async function cancelAzkarNotifications(): Promise<void> {
+  try {
+    const pending = await LocalNotifications.getPending();
+
+    const azkarNotifications = pending.notifications
+      .filter(
+        (notification) =>
+          (notification.id >= MORNING_AZKAR_START_ID &&
+            notification.id < EVENING_AZKAR_START_ID) ||
+          notification.id >= EVENING_AZKAR_START_ID
+      )
+      .map((notification) => ({ id: notification.id }));
+
+    if (azkarNotifications.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: azkarNotifications,
+      });
+    }
+  } catch (err) {
+    console.warn('Failed to cancel Azkar notifications:', err);
+  }
+}
+
+export async function scheduleAutomaticAzkarNotifications(): Promise<number> {
+  if (!Capacitor.isNativePlatform()) return 0;
+
+  try {
+    await initAzkarNotificationChannel();
+    await cancelAzkarNotifications();
+
+    const now = new Date();
+    const notificationsToSchedule: LocalNotificationSchema[] = [];
+
+    const DAYS_TO_SCHEDULE = 7;
+
+    for (let dayOffset = 0; dayOffset < DAYS_TO_SCHEDULE; dayOffset++) {
+      const targetDate = new Date(now);
+      targetDate.setDate(now.getDate() + dayOffset);
+
+      const morningTime = new Date(targetDate);
+      morningTime.setHours(7, 0, 0, 0);
+
+      if (morningTime.getTime() > now.getTime()) {
+        notificationsToSchedule.push({
+          id: MORNING_AZKAR_START_ID + dayOffset,
+          title: 'أذكار الصباح',
+          body: 'حان وقت أذكار الصباح 🌅',
+          schedule: {
+            at: morningTime,
+            allowWhileIdle: true,
+          },
+          channelId: AZKAR_CHANNEL_ID,
+          smallIcon: 'ic_launcher',
+          autoCancel: true,
+        });
+      }
+
+      const eveningTime = new Date(targetDate);
+      eveningTime.setHours(18, 0, 0, 0);
+
+      if (eveningTime.getTime() > now.getTime()) {
+        notificationsToSchedule.push({
+          id: EVENING_AZKAR_START_ID + dayOffset,
+          title: 'أذكار المساء',
+          body: 'حان وقت أذكار المساء 🌙',
+          schedule: {
+            at: eveningTime,
+            allowWhileIdle: true,
+          },
+          channelId: AZKAR_CHANNEL_ID,
+          smallIcon: 'ic_launcher',
+          autoCancel: true,
+        });
+      }
+    }
+
+    if (notificationsToSchedule.length > 0) {
+      await LocalNotifications.schedule({
+        notifications: notificationsToSchedule,
+      });
+    }
+
+    console.log(
+      `Successfully scheduled ${notificationsToSchedule.length} Azkar notifications.`
+    );
+
+    return notificationsToSchedule.length;
+  } catch (err) {
+    console.warn('Failed to schedule Azkar notifications:', err);
+    return 0;
+  }
+}
+
 export async function scheduleAutomaticAdhanAlarms(
   latitude: number,
   longitude: number,
@@ -106,37 +237,40 @@ export async function scheduleAutomaticAdhanAlarms(
   try {
     await initPrayerAlarmChannel();
 
-    // Cancel all previously scheduled prayer notifications to avoid duplicate alarms
-    const pending = await LocalNotifications.getPending();
-    if (pending.notifications.length > 0) {
-      await LocalNotifications.cancel({
-        notifications: pending.notifications.map((n) => ({ id: n.id })),
-      });
-    }
+    await cancelPrayerNotifications();
 
-    // If adhan is set to silent, do not schedule audio alarms
+    await scheduleAutomaticAzkarNotifications();
+
     if (settings.adhanType === 'silent') {
       return 0;
     }
 
     const coordinates = new Coordinates(latitude, longitude);
-    const params = getCalculationParameters(settings.calculationMethod, settings.madhab);
+    const params = getCalculationParameters(
+      settings.calculationMethod,
+      settings.madhab
+    );
+
     const now = new Date();
     const notificationsToSchedule: LocalNotificationSchema[] = [];
 
-    // Schedule for the next 7 days
     const DAYS_TO_SCHEDULE = 7;
 
     for (let dayOffset = 0; dayOffset < DAYS_TO_SCHEDULE; dayOffset++) {
       const targetDate = new Date();
       targetDate.setDate(now.getDate() + dayOffset);
-      const prayerTimes = new PrayerTimes(coordinates, targetDate, params);
+
+      const prayerTimes = new PrayerTimes(
+        coordinates,
+        targetDate,
+        params
+      );
 
       for (const prayer of PRAYERS) {
-        // Check if alert is enabled for this specific prayer
         if (!settings.prayerAlerts[prayer.key]) continue;
 
         let prayerTime: Date | null = null;
+
         switch (prayer.key) {
           case 'fajr':
             prayerTime = prayerTimes.fajr;
@@ -157,10 +291,11 @@ export async function scheduleAutomaticAdhanAlarms(
 
         if (!prayerTime || isNaN(prayerTime.getTime())) continue;
 
-        // Only schedule if in the future
         if (prayerTime.getTime() > now.getTime()) {
-          // Deterministic unique integer ID: dayOffset (0-9) * 10 + prayer index + 1000
-          const notificationId = 1000 + dayOffset * 10 + prayer.index;
+          const notificationId =
+            PRAYER_NOTIFICATION_START_ID +
+            dayOffset * 10 +
+            prayer.index;
 
           const timeFormatted = prayerTime.toLocaleTimeString('ar-MA', {
             hour: '2-digit',
@@ -174,10 +309,10 @@ export async function scheduleAutomaticAdhanAlarms(
             body: `الله أكبر - حان وقت صلاة ${prayer.nameAr} (${timeFormatted})`,
             schedule: {
               at: prayerTime,
-              allowWhileIdle: true, // Wakes device from deep sleep / Doze mode using exact alarm
+              allowWhileIdle: true,
             },
             channelId: ADHAN_CHANNEL_ID,
-            sound: 'adhan.mp3', // Bundled in res/raw/adhan.mp3
+            sound: 'adhan.mp3',
             smallIcon: 'ic_launcher',
             autoCancel: true,
           });
@@ -189,7 +324,10 @@ export async function scheduleAutomaticAdhanAlarms(
       await LocalNotifications.schedule({
         notifications: notificationsToSchedule,
       });
-      console.log(`Successfully scheduled ${notificationsToSchedule.length} automatic Adhan alarms.`);
+
+      console.log(
+        `Successfully scheduled ${notificationsToSchedule.length} automatic Adhan alarms.`
+      );
     }
 
     return notificationsToSchedule.length;
