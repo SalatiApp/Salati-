@@ -1,4 +1,6 @@
+import { Capacitor } from '@capacitor/core';
 import { triggerNativeHaptic } from './nativeAndroid';
+import { checkPrayerAlarmPermissions, requestPrayerAlarmPermissions } from './prayerAlarmScheduler';
 
 // Offline Web Audio API Synthesizer + Free Public Adhan Audio Player
 
@@ -191,23 +193,16 @@ class SoundManager {
 
 export const soundManager = new SoundManager();
 
-// Browser notification helper for prayer alerts
-export async function requestNotificationPermission(): Promise<boolean> {
-  if (!('Notification' in window)) {
-    return false;
-  }
-  if (Notification.permission === 'granted') {
-    return true;
-  }
-  if (Notification.permission !== 'denied') {
-    const perm = await Notification.requestPermission();
-    return perm === 'granted';
-  }
-  return false;
-}
+// Notification permission helpers (supporting native Android Capacitor & browser fallback)
+export const checkNotificationPermission = checkPrayerAlarmPermissions;
+export const requestNotificationPermission = requestPrayerAlarmPermissions;
 
 export function sendPrayerNotification(prayerName: string) {
-  if ('Notification' in window && Notification.permission === 'granted') {
+  // On native Android, exact alarms with local adhan.mp3 are handled via @capacitor/local-notifications
+  if (Capacitor.isNativePlatform()) {
+    return;
+  }
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
     new Notification(`حان الآن موعد أذان ${prayerName}`, {
       body: `حي على الصلاة، حي على الفلاح. تقبل الله طاعتكم.`,
       icon: '/favicon.ico',

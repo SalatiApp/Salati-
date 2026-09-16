@@ -31,18 +31,51 @@ export async function initPrayerAlarmChannel(): Promise<void> {
 }
 
 /**
+ * Check notification permissions using @capacitor/local-notifications on Android
+ */
+export async function checkPrayerAlarmPermissions(): Promise<boolean> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const status = await LocalNotifications.checkPermissions();
+      return status.display === 'granted';
+    } catch (err) {
+      console.warn('Error checking notification permissions:', err);
+      return false;
+    }
+  }
+
+  // Browser fallback
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    return Notification.permission === 'granted';
+  }
+  return false;
+}
+
+/**
  * Request notification and exact alarm permissions on Android
  */
 export async function requestPrayerAlarmPermissions(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
-
-  try {
-    const status = await LocalNotifications.requestPermissions();
-    return status.display === 'granted';
-  } catch (err) {
-    console.warn('Error requesting notification permissions:', err);
-    return false;
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const status = await LocalNotifications.requestPermissions();
+      return status.display === 'granted';
+    } catch (err) {
+      console.warn('Error requesting notification permissions:', err);
+      return false;
+    }
   }
+
+  // Browser fallback
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    if (Notification.permission === 'granted') {
+      return true;
+    }
+    if (Notification.permission !== 'denied') {
+      const perm = await Notification.requestPermission();
+      return perm === 'granted';
+    }
+  }
+  return false;
 }
 
 interface PrayerDef {

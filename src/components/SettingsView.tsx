@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Compass, 
@@ -23,7 +23,9 @@ import {
 } from 'lucide-react';
 import { CALCULATION_METHODS, CITIES } from '../data/cities';
 import { CalculationMethodKey, CityData, MadhabKey, UserSettings } from '../types';
-import { requestNotificationPermission, soundManager } from '../utils/sound';
+import { checkNotificationPermission, requestNotificationPermission, soundManager } from '../utils/sound';
+import { scheduleAutomaticAdhanAlarms } from '../utils/prayerAlarmScheduler';
+import { Capacitor } from '@capacitor/core';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface SettingsViewProps {
@@ -43,9 +45,42 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [citySearchQuery, setCitySearchQuery] = useState('');
   const [gpsStatus, setGpsStatus] = useState<string | null>(null);
   const [isPlayingTestAdhan, setIsPlayingTestAdhan] = useState(false);
-  const [notificationPermissionGranted, setNotificationPermissionGranted] = useState<boolean>(
-    'Notification' in window ? Notification.permission === 'granted' : false
-  );
+  const [notificationPermissionGranted, setNotificationPermissionGranted] = useState<boolean>(() => {
+    if (Capacitor.isNativePlatform()) {
+      return false;
+    }
+    return typeof window !== 'undefined' && 'Notification' in window
+      ? Notification.permission === 'granted'
+      : false;
+  });
+
+  // Check notification permission (via @capacitor/local-notifications on Android)
+  useEffect(() => {
+    let isMounted = true;
+    const verifyPermission = async () => {
+      const granted = await checkNotificationPermission();
+      if (isMounted) {
+        setNotificationPermissionGranted(granted);
+      }
+    };
+
+    verifyPermission();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        verifyPermission();
+      }
+    };
+
+    window.addEventListener('focus', verifyPermission);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', verifyPermission);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSModal, setShowIOSModal] = useState(false);
 
@@ -100,9 +135,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const granted = await requestNotificationPermission();
     setNotificationPermissionGranted(granted);
     if (granted) {
+      if (Capacitor.isNativePlatform()) {
+        scheduleAutomaticAdhanAlarms(currentCity.latitude, currentCity.longitude, settings);
+      }
       alert('تم تفعيل إشعارات الأذان بنجاح!');
     } else {
-      alert('تم رفض الإذن أو غير متاح في هذا المتصفح.');
+      if (Capacitor.isNativePlatform()) {
+        alert('لم يتم منح إذن الإشعارات. يمكنك تفعيل الإشعارات من إعدادات الهاتف لتطبيق صلاتي.');
+      } else {
+        alert('تم رفض الإذن أو غير متاح في هذا المتصفح.');
+      }
     }
   };
 
@@ -232,7 +274,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between mb-4">
           <div>
             <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">
-              إشعارات المتصفح والنظام:
+              {Capacitor.isNativePlatform() ? 'إشعارات وتنبيهات الأذان:' : 'إشعارات المتصفح والنظام:'}
             </span>
             <span className={`text-xs font-bold ${notificationPermissionGranted ? 'text-emerald-600' : 'text-amber-600'}`}>
               {notificationPermissionGranted ? 'مفعلة وجاهزة للتنبيه' : 'تحتاج للموافقة على الإذن'}
