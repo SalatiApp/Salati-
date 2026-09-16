@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   MapPin, 
   Compass, 
@@ -35,7 +35,7 @@ interface SettingsViewProps {
   onSelectCity: (city: CityData) => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({
+const SettingsViewComponent: React.FC<SettingsViewProps> = ({
   settings,
   currentCity,
   onUpdateSettings,
@@ -43,6 +43,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [citySearchQuery, setCitySearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [gpsStatus, setGpsStatus] = useState<string | null>(null);
   const [isPlayingTestAdhan, setIsPlayingTestAdhan] = useState(false);
   const [notificationPermissionGranted, setNotificationPermissionGranted] = useState<boolean>(() => {
@@ -54,13 +55,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       : false;
   });
 
+  // Focus city search input smoothly when modal opens
+  useEffect(() => {
+    if (isCityModalOpen) {
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [isCityModalOpen]);
+
   // Check notification permission (via @capacitor/local-notifications on Android)
   useEffect(() => {
     let isMounted = true;
     const verifyPermission = async () => {
       const granted = await checkNotificationPermission();
       if (isMounted) {
-        setNotificationPermissionGranted(granted);
+        setNotificationPermissionGranted((prev) => (prev === granted ? prev : granted));
       }
     };
 
@@ -72,23 +83,46 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       }
     };
 
-    window.addEventListener('focus', verifyPermission);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       isMounted = false;
-      window.removeEventListener('focus', verifyPermission);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSModal, setShowIOSModal] = useState(false);
 
-  const filteredCities = CITIES.filter((c) =>
-    c.nameAr.includes(citySearchQuery) ||
-    c.nameEn.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
-    c.countryAr.includes(citySearchQuery)
-  );
+  // Normalize Arabic letters and diacritics to ensure resilient city searches
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[أإآ]/g, 'ا')
+      .replace(/[ة]/g, 'ه')
+      .replace(/[ى]/g, 'ي')
+      .replace(/[\u064B-\u065F]/g, '');
+  };
+
+  const filteredCities = useMemo(() => {
+    const rawQuery = citySearchQuery.trim();
+    if (!rawQuery) {
+      return CITIES;
+    }
+    const query = normalizeText(rawQuery);
+    return CITIES.filter((c) => {
+      const nameAr = normalizeText(c.nameAr);
+      const nameEn = c.nameEn.toLowerCase();
+      const countryAr = normalizeText(c.countryAr);
+      const countryEn = c.countryEn.toLowerCase();
+      return (
+        nameAr.includes(query) ||
+        nameEn.includes(query) ||
+        countryAr.includes(query) ||
+        countryEn.includes(query)
+      );
+    });
+  }, [citySearchQuery]);
 
   const handleUseGps = () => {
     if (!('geolocation' in navigator)) {
@@ -175,7 +209,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           <button
-            onClick={() => setIsCityModalOpen(true)}
+            onClick={() => {
+              setCitySearchQuery('');
+              setIsCityModalOpen(true);
+            }}
             className="px-3.5 py-2 rounded-xl bg-emerald-700 text-white font-semibold text-xs hover:bg-emerald-800 transition shadow-sm"
           >
             تغيير المدينة
@@ -558,15 +595,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {/* Search */}
             <div className="my-3 relative">
-              <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3 pointer-events-none" />
+              <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
               <input
+                id="city-search-input"
+                name="citySearch"
+                ref={searchInputRef}
                 type="text"
                 value={citySearchQuery}
                 onChange={(e) => setCitySearchQuery(e.target.value)}
                 placeholder="ابحث عن مدينة أو دولة..."
-                className="w-full pr-10 pl-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                autoFocus
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full pr-10 pl-9 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 caret-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 transition"
+                style={{ color: 'inherit' }}
               />
+              {citySearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCitySearchQuery('');
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute left-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-lg transition"
+                  aria-label="مسح البحث"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* Cities List */}
@@ -591,6 +647,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   )}
                 </button>
               ))}
+
+              {filteredCities.length === 0 && (
+                <div className="text-center py-8 text-slate-400 text-xs font-tajawal">
+                  لم يتم العثور على مدينة مطابقة لبحثك
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -598,3 +660,5 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     </div>
   );
 };
+
+export const SettingsView = React.memo(SettingsViewComponent);

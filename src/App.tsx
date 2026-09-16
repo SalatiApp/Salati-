@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { CITIES } from './data/cities';
 import { CityData, TabType, UserSettings } from './types';
 import { calculateDailyPrayers } from './utils/prayerCalculations';
@@ -77,13 +77,13 @@ export default function App() {
   }, []);
 
   // Save settings when changed
-  const updateSettings = (newSettings: Partial<UserSettings>) => {
+  const updateSettings = useCallback((newSettings: Partial<UserSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...newSettings };
       localStorage.setItem('salati_settings', JSON.stringify(updated));
       return updated;
     });
-  };
+  }, []);
 
   // Find current city data
   const currentCity: CityData = useMemo(() => {
@@ -105,13 +105,18 @@ export default function App() {
   }, [settings.locationMode, settings.selectedCityId, settings.customCoordinates, settings.calculationMethod]);
 
   // Handle city selection
-  const handleSelectCity = (city: CityData) => {
-    updateSettings({
-      locationMode: 'city',
-      selectedCityId: city.id,
-      calculationMethod: (city.defaultMethod as UserSettings['calculationMethod']) || settings.calculationMethod,
+  const handleSelectCity = useCallback((city: CityData) => {
+    setSettings((prev) => {
+      const updated: UserSettings = {
+        ...prev,
+        locationMode: 'city',
+        selectedCityId: city.id,
+        calculationMethod: (city.defaultMethod as UserSettings['calculationMethod']) || prev.calculationMethod,
+      };
+      localStorage.setItem('salati_settings', JSON.stringify(updated));
+      return updated;
     });
-  };
+  }, []);
 
   // Handle per-prayer notification alert toggle
   const handleUpdatePrayerAlert = (prayerId: keyof UserSettings['prayerAlerts']) => {
