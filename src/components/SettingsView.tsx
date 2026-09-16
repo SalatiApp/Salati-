@@ -55,12 +55,16 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
       : false;
   });
 
-  // Focus city search input smoothly when modal opens
+  // Focus and initialize city search input when modal opens
   useEffect(() => {
     if (isCityModalOpen) {
+      setCitySearchQuery('');
+      if (searchInputRef.current) {
+        searchInputRef.current.value = '';
+      }
       const timer = setTimeout(() => {
         searchInputRef.current?.focus();
-      }, 60);
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [isCityModalOpen]);
@@ -110,17 +114,31 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
       return CITIES;
     }
     const query = normalizeText(rawQuery);
-    return CITIES.filter((c) => {
+    const matches = CITIES.filter((c) => {
       const nameAr = normalizeText(c.nameAr);
-      const nameEn = c.nameEn.toLowerCase();
-      const countryAr = normalizeText(c.countryAr);
-      const countryEn = c.countryEn.toLowerCase();
+      const nameEn = (c.nameEn || '').toLowerCase();
+      const countryAr = normalizeText(c.countryAr || '');
+      const countryEn = (c.countryEn || '').toLowerCase();
       return (
         nameAr.includes(query) ||
         nameEn.includes(query) ||
         countryAr.includes(query) ||
         countryEn.includes(query)
       );
+    });
+
+    return matches.sort((a, b) => {
+      const aName = normalizeText(a.nameAr);
+      const bName = normalizeText(b.nameAr);
+      const aExact = aName === query ? 1 : 0;
+      const bExact = bName === query ? 1 : 0;
+      if (aExact !== bExact) return bExact - aExact;
+
+      const aStarts = aName.startsWith(query) ? 1 : 0;
+      const bStarts = bName.startsWith(query) ? 1 : 0;
+      if (aStarts !== bStarts) return bStarts - aStarts;
+
+      return 0;
     });
   }, [citySearchQuery]);
 
@@ -601,8 +619,10 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
                 name="citySearch"
                 ref={searchInputRef}
                 type="text"
-                value={citySearchQuery}
+                defaultValue=""
+                onInput={(e) => setCitySearchQuery((e.target as HTMLInputElement).value)}
                 onChange={(e) => setCitySearchQuery(e.target.value)}
+                onCompositionEnd={(e) => setCitySearchQuery((e.target as HTMLInputElement).value)}
                 placeholder="ابحث عن مدينة أو دولة..."
                 autoComplete="off"
                 autoCorrect="off"
@@ -615,7 +635,10 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
                   type="button"
                   onClick={() => {
                     setCitySearchQuery('');
-                    searchInputRef.current?.focus();
+                    if (searchInputRef.current) {
+                      searchInputRef.current.value = '';
+                      searchInputRef.current.focus();
+                    }
                   }}
                   className="absolute left-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-lg transition"
                   aria-label="مسح البحث"
