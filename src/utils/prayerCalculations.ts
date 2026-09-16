@@ -61,15 +61,22 @@ export function calculateDailyPrayers(
   const prayerTimes = new PrayerTimes(coordinates, date, params);
 
   const now = new Date();
+
   const formatTime = (d: Date) => {
-    return d.toLocaleTimeString('ar-EG', {
+    return d.toLocaleTimeString('ar-EG-u-nu-latn', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: !settings.timeFormat24,
     });
   };
 
-  const rawList: { id: PrayerTimeItem['id']; nameAr: string; nameEn: string; time: Date; adhanEnabled: boolean }[] = [
+  const rawList: {
+    id: PrayerTimeItem['id'];
+    nameAr: string;
+    nameEn: string;
+    time: Date;
+    adhanEnabled: boolean;
+  }[] = [
     { id: 'fajr', nameAr: 'الفَجْر', nameEn: 'Fajr', time: prayerTimes.fajr, adhanEnabled: settings.prayerAlerts.fajr },
     { id: 'sunrise', nameAr: 'الشُّرُوق', nameEn: 'Sunrise', time: prayerTimes.sunrise, adhanEnabled: false },
     { id: 'dhuhr', nameAr: 'الظُّهْر', nameEn: 'Dhuhr', time: prayerTimes.dhuhr, adhanEnabled: settings.prayerAlerts.dhuhr },
@@ -78,7 +85,6 @@ export function calculateDailyPrayers(
     { id: 'isha', nameAr: 'العِشَاء', nameEn: 'Isha', time: prayerTimes.isha, adhanEnabled: settings.prayerAlerts.isha },
   ];
 
-  // Find next prayer
   let nextIdx = rawList.findIndex(p => p.time.getTime() > now.getTime());
   let nextPrayerItem: PrayerTimeItem | null = null;
   let previousPrayerItem: PrayerTimeItem | null = null;
@@ -86,9 +92,9 @@ export function calculateDailyPrayers(
   let progressPercent = 0;
 
   if (nextIdx === -1) {
-    // All prayers of today have passed, next is tomorrow's Fajr
     const tomorrow = new Date(date);
     tomorrow.setDate(tomorrow.getDate() + 1);
+
     const tomorrowPrayers = new PrayerTimes(coordinates, tomorrow, params);
     const tomorrowFajr = tomorrowPrayers.fajr;
 
@@ -116,10 +122,15 @@ export function calculateDailyPrayers(
 
     const totalWindow = tomorrowFajr.getTime() - prayerTimes.isha.getTime();
     const elapsed = now.getTime() - prayerTimes.isha.getTime();
+
     progressPercent = Math.min(100, Math.max(0, (elapsed / totalWindow) * 100));
-    timeRemainingSeconds = Math.max(0, Math.floor((tomorrowFajr.getTime() - now.getTime()) / 1000));
+    timeRemainingSeconds = Math.max(
+      0,
+      Math.floor((tomorrowFajr.getTime() - now.getTime()) / 1000)
+    );
   } else {
     const rawNext = rawList[nextIdx];
+
     nextPrayerItem = {
       ...rawNext,
       timeFormatted: formatTime(rawNext.time),
@@ -127,23 +138,38 @@ export function calculateDailyPrayers(
       isPassed: false,
     };
 
-    const prevTime = nextIdx > 0 ? rawList[nextIdx - 1].time : new Date(prayerTimes.fajr.getTime() - 8 * 3600 * 1000);
-    previousPrayerItem = nextIdx > 0 ? {
-      ...rawList[nextIdx - 1],
-      timeFormatted: formatTime(rawList[nextIdx - 1].time),
-      isNext: false,
-      isPassed: true,
-    } : null;
+    const prevTime =
+      nextIdx > 0
+        ? rawList[nextIdx - 1].time
+        : new Date(prayerTimes.fajr.getTime() - 8 * 3600 * 1000);
+
+    previousPrayerItem =
+      nextIdx > 0
+        ? {
+            ...rawList[nextIdx - 1],
+            timeFormatted: formatTime(rawList[nextIdx - 1].time),
+            isNext: false,
+            isPassed: true,
+          }
+        : null;
 
     const totalWindow = rawNext.time.getTime() - prevTime.getTime();
     const elapsed = now.getTime() - prevTime.getTime();
+
     progressPercent = Math.min(100, Math.max(0, (elapsed / totalWindow) * 100));
-    timeRemainingSeconds = Math.max(0, Math.floor((rawNext.time.getTime() - now.getTime()) / 1000));
+    timeRemainingSeconds = Math.max(
+      0,
+      Math.floor((rawNext.time.getTime() - now.getTime()) / 1000)
+    );
   }
 
   const prayers: PrayerTimeItem[] = rawList.map((p) => {
-    const isNext = nextPrayerItem?.id === p.id && (nextIdx !== -1 ? rawList[nextIdx].id === p.id : false);
+    const isNext =
+      nextPrayerItem?.id === p.id &&
+      (nextIdx !== -1 ? rawList[nextIdx].id === p.id : false);
+
     const isPassed = p.time.getTime() < now.getTime();
+
     return {
       ...p,
       timeFormatted: formatTime(p.time),
@@ -167,10 +193,15 @@ export function getQiblaDirection(lat: number, lng: number): number {
   return Math.round(Qibla(coordinates));
 }
 
-export function formatSecondsToCountdown(seconds: number): { hours: string; minutes: string; seconds: string } {
+export function formatSecondsToCountdown(seconds: number): {
+  hours: string;
+  minutes: string;
+  seconds: string;
+} {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
+
   return {
     hours: String(h).padStart(2, '0'),
     minutes: String(m).padStart(2, '0'),
@@ -180,20 +211,20 @@ export function formatSecondsToCountdown(seconds: number): { hours: string; minu
 
 export function getFormattedHijriDate(date: Date = new Date()): string {
   try {
-    const formatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+    const formatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
+
     return formatter.format(date);
   } catch {
-    // Fallback if specific locale is missing
-    return '١٤٤٨ هـ';
+    return '1448 هـ';
   }
 }
 
 export function getFormattedGregorianDate(date: Date = new Date()): string {
-  return new Intl.DateTimeFormat('ar-EG', {
+  return new Intl.DateTimeFormat('ar-EG-u-nu-latn', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
