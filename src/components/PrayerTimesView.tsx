@@ -73,7 +73,7 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
       setIsPlayingAdhan(false);
     } else {
       setIsPlayingAdhan(true);
-      await soundManager.playAdhan(settings.adhanType);
+      await soundManager.playAdhan('full');
       setIsPlayingAdhan(false);
     }
   };

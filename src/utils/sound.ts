@@ -88,7 +88,7 @@ class SoundManager {
     });
   }
 
-  // Play authentic Makkah Adhan audio with graceful fallback to synthesized takbeer
+  // Play Adhan audio using local MP3 file (100% offline, zero external dependencies)
   async playAdhan(type: 'full' | 'takbeer' | 'beep' | 'silent' = 'full'): Promise<void> {
     if (type === 'silent') return;
 
@@ -102,30 +102,84 @@ class SoundManager {
       return;
     }
 
-    // Full Adhan: Try public domain authentic Makkah Adhan audio from high-availability Wikimedia/Archive CDN
+    // Full Adhan: Play local offline MP3 file
     this.stopAudio();
 
-    try {
-      const adhanUrl = 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Adhan_Makkah.ogg';
-      this.currentAudio = new Audio(adhanUrl);
-      this.currentAudio.volume = 0.9;
-      
-      const playPromise = this.currentAudio.play();
-      if (playPromise !== undefined) {
-        await playPromise.catch(() => {
-          // If network error or blocked by autoplay policy, fallback to lovely synthetic takbeer
-          this.playSyntheticTakbeer();
-        });
-      }
-    } catch {
-      this.playSyntheticTakbeer();
-    }
+    return new Promise((resolve) => {
+      // Build candidate local paths to ensure compatibility with Capacitor Android and Web
+      const candidates: string[] = [];
+      try {
+        const base = document.baseURI || window.location.href;
+        candidates.push(new URL('audio/adhan.mp3', base).href);
+        candidates.push(new URL('adhan.mp3', base).href);
+      } catch {}
+
+      try {
+        const baseUrl = import.meta.env.BASE_URL || '/';
+        const cleanBase = baseUrl.replace(/\/+$/, '');
+        candidates.push(`${cleanBase}/audio/adhan.mp3`);
+        candidates.push(`${cleanBase}/adhan.mp3`);
+      } catch {}
+
+      candidates.push('/audio/adhan.mp3');
+      candidates.push('audio/adhan.mp3');
+      candidates.push('./audio/adhan.mp3');
+      candidates.push('/adhan.mp3');
+      candidates.push('adhan.mp3');
+
+      // Unique candidates
+      const uniqueCandidates = Array.from(new Set(candidates));
+      let index = 0;
+      let isDone = false;
+
+      const finish = () => {
+        if (!isDone) {
+          isDone = true;
+          resolve();
+        }
+      };
+
+      const tryCandidate = () => {
+        if (isDone) return;
+        if (index >= uniqueCandidates.length) {
+          console.warn('Could not load local Adhan audio from any local path');
+          finish();
+          return;
+        }
+
+        const candidateUrl = uniqueCandidates[index++];
+        const audio = new Audio(candidateUrl);
+        audio.volume = 1.0;
+        this.currentAudio = audio;
+
+        audio.onended = finish;
+        audio.onerror = () => {
+          if (!isDone) {
+            tryCandidate();
+          }
+        };
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            if (!isDone) {
+              tryCandidate();
+            }
+          });
+        }
+      };
+
+      tryCandidate();
+    });
   }
 
   stopAudio() {
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio.currentTime = 0;
+      if (this.currentAudio.onended) {
+        (this.currentAudio.onended as () => void)();
+      }
       this.currentAudio = null;
     }
   }
