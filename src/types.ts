@@ -23,7 +23,7 @@ export interface CityData {
   defaultMethod: string;
 }
 
-export type CalculationMethodKey = 
+export type CalculationMethodKey =
   | 'MuslimWorldLeague'
   | 'Egyptian'
   | 'Karachi'
@@ -46,7 +46,9 @@ export interface UserSettings {
   };
   calculationMethod: CalculationMethodKey;
   madhab: MadhabKey;
+
   adhanType: 'full' | 'takbeer' | 'beep' | 'silent';
+
   prayerAlerts: {
     fajr: boolean;
     dhuhr: boolean;
@@ -54,7 +56,12 @@ export interface UserSettings {
     maghrib: boolean;
     isha: boolean;
   };
-  quranFontSize: number; // in pixels
+
+  // إشعارات أذكار الصباح والمساء
+  morningAzkarAlerts?: boolean;
+  eveningAzkarAlerts?: boolean;
+
+  quranFontSize: number;
   quranReadingMode: 'day' | 'night' | 'sepia';
   timeFormat24: boolean;
   theme: 'emerald' | 'dark' | 'midnight';
