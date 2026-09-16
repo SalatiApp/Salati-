@@ -3,6 +3,7 @@ import { CalculationMethodKey, MadhabKey, PrayerTimeItem, UserSettings } from '.
 
 export function getCalculationParameters(methodKey: CalculationMethodKey, madhabKey: MadhabKey) {
   let params;
+
   switch (methodKey) {
     case 'Egyptian':
       params = CalculationMethod.Egyptian();
@@ -62,11 +63,12 @@ export function calculateDailyPrayers(
 
   const now = new Date();
 
+  // عرض مواقيت الصلاة دائماً بنظام 24 ساعة وبالأرقام الغربية
   const formatTime = (d: Date) => {
     return d.toLocaleTimeString('ar-EG-u-nu-latn', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: !settings.timeFormat24,
+      hour12: false,
     });
   };
 
@@ -77,15 +79,54 @@ export function calculateDailyPrayers(
     time: Date;
     adhanEnabled: boolean;
   }[] = [
-    { id: 'fajr', nameAr: 'الفَجْر', nameEn: 'Fajr', time: prayerTimes.fajr, adhanEnabled: settings.prayerAlerts.fajr },
-    { id: 'sunrise', nameAr: 'الشُّرُوق', nameEn: 'Sunrise', time: prayerTimes.sunrise, adhanEnabled: false },
-    { id: 'dhuhr', nameAr: 'الظُّهْر', nameEn: 'Dhuhr', time: prayerTimes.dhuhr, adhanEnabled: settings.prayerAlerts.dhuhr },
-    { id: 'asr', nameAr: 'العَصْر', nameEn: 'Asr', time: prayerTimes.asr, adhanEnabled: settings.prayerAlerts.asr },
-    { id: 'maghrib', nameAr: 'المَغْرِب', nameEn: 'Maghrib', time: prayerTimes.maghrib, adhanEnabled: settings.prayerAlerts.maghrib },
-    { id: 'isha', nameAr: 'العِشَاء', nameEn: 'Isha', time: prayerTimes.isha, adhanEnabled: settings.prayerAlerts.isha },
+    {
+      id: 'fajr',
+      nameAr: 'الفَجْر',
+      nameEn: 'Fajr',
+      time: prayerTimes.fajr,
+      adhanEnabled: settings.prayerAlerts.fajr,
+    },
+    {
+      id: 'sunrise',
+      nameAr: 'الشُّرُوق',
+      nameEn: 'Sunrise',
+      time: prayerTimes.sunrise,
+      adhanEnabled: false,
+    },
+    {
+      id: 'dhuhr',
+      nameAr: 'الظُّهْر',
+      nameEn: 'Dhuhr',
+      time: prayerTimes.dhuhr,
+      adhanEnabled: settings.prayerAlerts.dhuhr,
+    },
+    {
+      id: 'asr',
+      nameAr: 'العَصْر',
+      nameEn: 'Asr',
+      time: prayerTimes.asr,
+      adhanEnabled: settings.prayerAlerts.asr,
+    },
+    {
+      id: 'maghrib',
+      nameAr: 'المَغْرِب',
+      nameEn: 'Maghrib',
+      time: prayerTimes.maghrib,
+      adhanEnabled: settings.prayerAlerts.maghrib,
+    },
+    {
+      id: 'isha',
+      nameAr: 'العِشَاء',
+      nameEn: 'Isha',
+      time: prayerTimes.isha,
+      adhanEnabled: settings.prayerAlerts.isha,
+    },
   ];
 
-  let nextIdx = rawList.findIndex(p => p.time.getTime() > now.getTime());
+  let nextIdx = rawList.findIndex(
+    p => p.time.getTime() > now.getTime()
+  );
+
   let nextPrayerItem: PrayerTimeItem | null = null;
   let previousPrayerItem: PrayerTimeItem | null = null;
   let timeRemainingSeconds = 0;
@@ -95,7 +136,12 @@ export function calculateDailyPrayers(
     const tomorrow = new Date(date);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const tomorrowPrayers = new PrayerTimes(coordinates, tomorrow, params);
+    const tomorrowPrayers = new PrayerTimes(
+      coordinates,
+      tomorrow,
+      params
+    );
+
     const tomorrowFajr = tomorrowPrayers.fajr;
 
     nextPrayerItem = {
@@ -120,13 +166,22 @@ export function calculateDailyPrayers(
       adhanEnabled: settings.prayerAlerts.isha,
     };
 
-    const totalWindow = tomorrowFajr.getTime() - prayerTimes.isha.getTime();
-    const elapsed = now.getTime() - prayerTimes.isha.getTime();
+    const totalWindow =
+      tomorrowFajr.getTime() - prayerTimes.isha.getTime();
 
-    progressPercent = Math.min(100, Math.max(0, (elapsed / totalWindow) * 100));
+    const elapsed =
+      now.getTime() - prayerTimes.isha.getTime();
+
+    progressPercent = Math.min(
+      100,
+      Math.max(0, (elapsed / totalWindow) * 100)
+    );
+
     timeRemainingSeconds = Math.max(
       0,
-      Math.floor((tomorrowFajr.getTime() - now.getTime()) / 1000)
+      Math.floor(
+        (tomorrowFajr.getTime() - now.getTime()) / 1000
+      )
     );
   } else {
     const rawNext = rawList[nextIdx];
@@ -141,34 +196,52 @@ export function calculateDailyPrayers(
     const prevTime =
       nextIdx > 0
         ? rawList[nextIdx - 1].time
-        : new Date(prayerTimes.fajr.getTime() - 8 * 3600 * 1000);
+        : new Date(
+            prayerTimes.fajr.getTime() -
+              8 * 3600 * 1000
+          );
 
     previousPrayerItem =
       nextIdx > 0
         ? {
             ...rawList[nextIdx - 1],
-            timeFormatted: formatTime(rawList[nextIdx - 1].time),
+            timeFormatted: formatTime(
+              rawList[nextIdx - 1].time
+            ),
             isNext: false,
             isPassed: true,
           }
         : null;
 
-    const totalWindow = rawNext.time.getTime() - prevTime.getTime();
-    const elapsed = now.getTime() - prevTime.getTime();
+    const totalWindow =
+      rawNext.time.getTime() - prevTime.getTime();
 
-    progressPercent = Math.min(100, Math.max(0, (elapsed / totalWindow) * 100));
+    const elapsed =
+      now.getTime() - prevTime.getTime();
+
+    progressPercent = Math.min(
+      100,
+      Math.max(0, (elapsed / totalWindow) * 100)
+    );
+
     timeRemainingSeconds = Math.max(
       0,
-      Math.floor((rawNext.time.getTime() - now.getTime()) / 1000)
+      Math.floor(
+        (rawNext.time.getTime() - now.getTime()) /
+          1000
+      )
     );
   }
 
-  const prayers: PrayerTimeItem[] = rawList.map((p) => {
+  const prayers: PrayerTimeItem[] = rawList.map(p => {
     const isNext =
       nextPrayerItem?.id === p.id &&
-      (nextIdx !== -1 ? rawList[nextIdx].id === p.id : false);
+      (nextIdx !== -1
+        ? rawList[nextIdx].id === p.id
+        : false);
 
-    const isPassed = p.time.getTime() < now.getTime();
+    const isPassed =
+      p.time.getTime() < now.getTime();
 
     return {
       ...p,
@@ -188,12 +261,17 @@ export function calculateDailyPrayers(
   };
 }
 
-export function getQiblaDirection(lat: number, lng: number): number {
+export function getQiblaDirection(
+  lat: number,
+  lng: number
+): number {
   const coordinates = new Coordinates(lat, lng);
   return Math.round(Qibla(coordinates));
 }
 
-export function formatSecondsToCountdown(seconds: number): {
+export function formatSecondsToCountdown(
+  seconds: number
+): {
   hours: string;
   minutes: string;
   seconds: string;
@@ -209,13 +287,18 @@ export function formatSecondsToCountdown(seconds: number): {
   };
 }
 
-export function getFormattedHijriDate(date: Date = new Date()): string {
+export function getFormattedHijriDate(
+  date: Date = new Date()
+): string {
   try {
-    const formatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    const formatter = new Intl.DateTimeFormat(
+      'ar-SA-u-ca-islamic-umalqura-nu-latn',
+      {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }
+    );
 
     return formatter.format(date);
   } catch {
@@ -223,11 +306,16 @@ export function getFormattedHijriDate(date: Date = new Date()): string {
   }
 }
 
-export function getFormattedGregorianDate(date: Date = new Date()): string {
-  return new Intl.DateTimeFormat('ar-EG-u-nu-latn', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
+export function getFormattedGregorianDate(
+  date: Date = new Date()
+): string {
+  return new Intl.DateTimeFormat(
+    'ar-EG-u-nu-latn',
+    {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }
+  ).format(date);
 }
