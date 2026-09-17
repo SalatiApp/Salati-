@@ -31,20 +31,20 @@ export async function initPrayerAlarmChannel(): Promise<void> {
       description: 'تنبيهات مواقيت الصلاة مع صوت الأذان',
       importance: 5,
       visibility: 1,
-      sound: 'adhan_normal.mp3',
+      sound: 'adhan.mp3',
       vibration: true,
       lights: true,
       lightColor: '#059669',
     });
 
-    // Fajr adhan channel
+    // Fajr adhan channel (uses the same adhan.mp3)
     await LocalNotifications.createChannel({
       id: ADHAN_FAJR_CHANNEL_ID,
       name: 'أذان الفجر',
-      description: 'تنبيهات صلاة الفجر مع صوت أذان الفجر',
+      description: 'تنبيهات صلاة الفجر مع صوت الأذان',
       importance: 5,
       visibility: 1,
-      sound: 'adhan_fajr.mp3',
+      sound: 'adhan.mp3',
       vibration: true,
       lights: true,
       lightColor: '#059669',
@@ -559,10 +559,7 @@ export async function scheduleAutomaticAdhanAlarms(
                 ? ADHAN_FAJR_CHANNEL_ID
                 : ADHAN_CHANNEL_ID,
 
-            sound:
-              prayer.key === 'fajr'
-                ? 'adhan_fajr.mp3'
-                : 'adhan_normal.mp3',
+            sound: 'adhan.mp3',
 
             smallIcon: 'ic_launcher',
 

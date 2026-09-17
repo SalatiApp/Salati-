@@ -7,6 +7,7 @@ import { checkPrayerAlarmPermissions, requestPrayerAlarmPermissions } from './pr
 class SoundManager {
   private audioCtx: AudioContext | null = null;
   private currentAudio: HTMLAudioElement | null = null;
+  private activeSessionId: number = 0;
 
   private getAudioContext(): AudioContext {
     if (!this.audioCtx) {
@@ -91,10 +92,10 @@ class SoundManager {
   }
 
   // Play Adhan audio using local MP3 file (100% offline, zero external dependencies)
-  // fajr -> adhan_fajr.mp3, all other prayers -> adhan_normal.mp3
+  // Uses the unified adhan.mp3 file for all 5 prayers, including Fajr
   async playAdhan(
     type: 'full' | 'takbeer' | 'beep' | 'silent' = 'full',
-    prayerId?: string
+    _prayerId?: string
   ): Promise<void> {
     if (type === 'silent') return;
 
@@ -108,42 +109,36 @@ class SoundManager {
       return;
     }
 
-    // Full Adhan: Play local offline MP3 file
-    // Fajr prayer uses adhan_fajr.mp3, other prayers use adhan_normal.mp3
+    // Immediately stop any existing audio playback completely to prevent overlap
     this.stopAudio();
 
-    const isFajr = prayerId?.toLowerCase() === 'fajr';
-    const primaryFile = isFajr ? 'adhan_fajr.mp3' : 'adhan_normal.mp3';
+    // Start a new exclusive playback session
+    const sessionId = ++this.activeSessionId;
+    const adhanFile = 'adhan.mp3';
 
     return new Promise((resolve) => {
       // Build candidate local paths to ensure compatibility with Capacitor Android and Web
-      const candidates: string[] = [];
+      const candidates: string[] = [
+        `/audio/${adhanFile}`,
+        `audio/${adhanFile}`,
+        `./audio/${adhanFile}`,
+        `/${adhanFile}`,
+        adhanFile,
+        `./${adhanFile}`,
+      ];
+
       try {
         const base = document.baseURI || window.location.href;
-        candidates.push(new URL(`audio/${primaryFile}`, base).href);
-        candidates.push(new URL(primaryFile, base).href);
+        candidates.unshift(new URL(`audio/${adhanFile}`, base).href);
+        candidates.unshift(new URL(adhanFile, base).href);
       } catch {}
 
       try {
         const baseUrl = import.meta.env.BASE_URL || '/';
         const cleanBase = baseUrl.replace(/\/+$/, '');
-        candidates.push(`${cleanBase}/audio/${primaryFile}`);
-        candidates.push(`${cleanBase}/${primaryFile}`);
+        candidates.unshift(`${cleanBase}/audio/${adhanFile}`);
+        candidates.unshift(`${cleanBase}/${adhanFile}`);
       } catch {}
-
-      candidates.push(`/audio/${primaryFile}`);
-      candidates.push(`audio/${primaryFile}`);
-      candidates.push(`./audio/${primaryFile}`);
-      candidates.push(`/${primaryFile}`);
-      candidates.push(primaryFile);
-
-      // Fallback candidates: try adhan_normal.mp3 if primary was fajr and vice versa
-      const fallbackFile = isFajr ? 'adhan_normal.mp3' : 'adhan_fajr.mp3';
-      candidates.push(`/audio/${fallbackFile}`);
-      candidates.push(`audio/${fallbackFile}`);
-      candidates.push(`./audio/${fallbackFile}`);
-      candidates.push(`/${fallbackFile}`);
-      candidates.push(fallbackFile);
 
       // Unique candidates
       const uniqueCandidates = Array.from(new Set(candidates));
@@ -153,12 +148,19 @@ class SoundManager {
       const finish = () => {
         if (!isDone) {
           isDone = true;
+          if (this.activeSessionId === sessionId) {
+            this.currentAudio = null;
+          }
           resolve();
         }
       };
 
       const tryCandidate = () => {
-        if (isDone) return;
+        // If stopped or a new session has started, abort immediately
+        if (isDone || this.activeSessionId !== sessionId) {
+          return;
+        }
+
         if (index >= uniqueCandidates.length) {
           console.warn('Could not load local Adhan audio from any local path');
           finish();
@@ -168,11 +170,23 @@ class SoundManager {
         const candidateUrl = uniqueCandidates[index++];
         const audio = new Audio(candidateUrl);
         audio.volume = 1.0;
+        audio.preload = 'auto';
+
+        if (this.activeSessionId !== sessionId) {
+          audio.src = '';
+          return;
+        }
+
         this.currentAudio = audio;
 
-        audio.onended = finish;
+        audio.onended = () => {
+          if (this.activeSessionId === sessionId) {
+            finish();
+          }
+        };
+
         audio.onerror = () => {
-          if (!isDone) {
+          if (this.activeSessionId === sessionId && !isDone) {
             tryCandidate();
           }
         };
@@ -180,7 +194,7 @@ class SoundManager {
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => {
-            if (!isDone) {
+            if (this.activeSessionId === sessionId && !isDone) {
               tryCandidate();
             }
           });
@@ -192,18 +206,26 @@ class SoundManager {
   }
 
   stopAudio() {
+    // Invalidate active session so in-flight candidate retries abort immediately
+    this.activeSessionId++;
+
     if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio.currentTime = 0;
-      if (this.currentAudio.onended) {
-        (this.currentAudio.onended as () => void)();
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+        this.currentAudio.onended = null;
+        this.currentAudio.onerror = null;
+        this.currentAudio.src = '';
+        this.currentAudio.load();
+      } catch (e) {
+        console.warn('Error stopping audio:', e);
       }
       this.currentAudio = null;
     }
   }
 
   isPlaying(): boolean {
-    return !!(this.currentAudio && !this.currentAudio.paused);
+    return !!(this.currentAudio && !this.currentAudio.paused && !this.currentAudio.ended);
   }
 }
 

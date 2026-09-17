@@ -184,25 +184,7 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
       setIsPlayingTestAdhan(true);
 
       try {
-        let activePrayerId = 'dhuhr';
-        try {
-          const prayerCalc = calculateDailyPrayers(
-            cityLat,
-            cityLng,
-            new Date(),
-            settings
-          );
-          if (prayerCalc.nextPrayerItem?.id) {
-            activePrayerId = prayerCalc.nextPrayerItem.id;
-          }
-        } catch {
-          // Fallback to standard prayer if calculation encounters error
-        }
-
-        await soundManager.playAdhan(
-          settings.adhanType,
-          activePrayerId
-        );
+        await soundManager.playAdhan(settings.adhanType);
       } finally {
         setIsPlayingTestAdhan(false);
       }
