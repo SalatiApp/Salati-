@@ -395,6 +395,7 @@ export default function App() {
         onOpenSettings={() => setCurrentTab('settings')}
         isMuted={isMuted}
         onToggleMute={() => setIsMuted(!isMuted)}
+        onUpdateSettings={updateSettings}
       />
 
       <main className="w-full max-w-xl mx-auto px-2.5 sm:px-4 py-2.5 pb-20">

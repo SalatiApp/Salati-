@@ -1,7 +1,7 @@
-import React from 'react';
-import { Compass, Moon, Bell, Volume2, VolumeX, Sparkles, Download, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { Volume2, VolumeX, Download, MapPin, Navigation } from 'lucide-react';
 import { getFormattedGregorianDate, getFormattedHijriDate } from '../utils/prayerCalculations';
-import { CityData } from '../types';
+import { CityData, UserSettings } from '../types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface NavbarProps {
@@ -14,24 +14,25 @@ interface NavbarProps {
   isMuted?: boolean;
   onToggleMute?: () => void;
   onInstallClick?: () => void;
+  onUpdateSettings?: (newSettings: Partial<UserSettings>) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentCity,
   currentTab,
   setCurrentTab,
-  onOpenQibla,
-  onOpenTasbeeh,
   onOpenSettings,
   isMuted = false,
   onToggleMute,
   onInstallClick,
+  onUpdateSettings,
 }) => {
   const hijriDate = getFormattedHijriDate();
   const gregorianDate = getFormattedGregorianDate();
   const { isInstallable, isInstalled, install } = usePWAInstall();
+  const [isLocating, setIsLocating] = useState(false);
 
-  const cityName = currentCity?.nameAr || 'مكة المكرمة';
+  const cityName = currentCity?.nameAr || 'موقعي الحالي (GPS)';
 
   const handleOpenSettings = () => {
     if (onOpenSettings) {
@@ -49,36 +50,74 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
+  const handleGpsLocation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!('geolocation' in navigator)) {
+      handleOpenSettings();
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setIsLocating(false);
+        const { latitude, longitude } = position.coords;
+        if (onUpdateSettings) {
+          onUpdateSettings({
+            locationMode: 'gps',
+            customCoordinates: {
+              latitude,
+              longitude,
+              cityName: 'موقعي الحالي (GPS)',
+            },
+          });
+        }
+      },
+      () => {
+        setIsLocating(false);
+        handleOpenSettings();
+      },
+      {
+        timeout: 10000,
+        enableHighAccuracy: true,
+      }
+    );
+  };
+
   return (
     <header className="sticky top-0 z-30 bg-emerald-900/95 backdrop-blur-md text-white border-b border-emerald-800/60 shadow-sm">
-      <div className="w-full max-w-xl mx-auto px-2.5 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
+      <div className="w-full max-w-xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
         {/* Brand & Location Info */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <img
             src="/pwa-192x192.png"
             alt="شعار صلاتي"
-            className="w-10 h-10 rounded-2xl border border-amber-400/30 shadow-md shrink-0 object-cover"
+            className="w-12 h-12 rounded-2xl border border-amber-400/40 shadow-md shrink-0 object-cover"
           />
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-white font-tajawal">صلاتي</h1>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white font-tajawal drop-shadow-xs">
+                صلاتي
+              </h1>
               <button
-                onClick={handleOpenSettings}
-                className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-800/90 text-emerald-200 hover:bg-emerald-700 hover:text-white transition flex items-center gap-1 border border-emerald-700/60 shadow-xs"
-                title="تغيير المدينة"
+                onClick={handleGpsLocation}
+                className="text-xs px-2.5 py-1 rounded-full bg-emerald-800/90 hover:bg-emerald-750 text-emerald-100 transition flex items-center gap-1.5 border border-emerald-700/60 shadow-xs active:scale-95"
+                title="تحديد وتغيير الموقع الجغرافي"
               >
-                <MapPin className="w-3 h-3 text-amber-300" />
-                <span>{cityName}</span>
+                <Navigation className={`w-3.5 h-3.5 text-amber-300 ${isLocating ? 'animate-spin' : ''}`} />
+                <span className="font-medium truncate max-w-[140px] sm:max-w-[180px]">
+                  {isLocating ? 'جاري التحديد...' : cityName.includes('GPS') ? 'موقعي الحالي (GPS)' : `موقعي: ${cityName}`}
+                </span>
               </button>
             </div>
-            <p className="text-[11px] text-emerald-300/90 font-medium mt-0.5">
+            <p className="text-[11px] text-emerald-300/90 font-medium mt-0.5 truncate">
               {hijriDate} • <span className="text-emerald-400/80">{gregorianDate}</span>
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* Quick PWA Install button if installable */}
           {!isInstalled && isInstallable && (
             <button
@@ -104,31 +143,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               aria-label="تبديل الصوت"
             >
               {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-            </button>
-          )}
-
-          {/* Qibla Direction Button */}
-          {onOpenQibla && (
-            <button
-              onClick={onOpenQibla}
-              className="p-2 rounded-xl bg-emerald-800/60 text-emerald-200 hover:bg-emerald-700/60 transition border border-emerald-700/40 active:scale-95 flex items-center justify-center"
-              title="اتجاه القبلة"
-              aria-label="اتجاه القبلة"
-            >
-              <Compass className="w-4 h-4 text-amber-300" />
-            </button>
-          )}
-
-          {/* Digital Tasbeeh Button */}
-          {onOpenTasbeeh && (
-            <button
-              onClick={onOpenTasbeeh}
-              className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600/30 to-amber-500/20 text-amber-300 hover:bg-amber-600/40 active:scale-95 transition border border-amber-500/30 flex items-center gap-1.5 text-xs font-semibold"
-              title="السبحة الإلكترونية"
-              aria-label="السبحة الإلكترونية"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>السبحة</span>
             </button>
           )}
         </div>
