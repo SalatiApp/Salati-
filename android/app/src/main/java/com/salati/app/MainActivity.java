@@ -12,11 +12,13 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     public static final String ADHAN_CHANNEL_ID = "salati_adhan_channel";
+    public static final String AZKAR_CHANNEL_ID = "salati_azkar_channel";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         createAdhanNotificationChannel();
+        createAzkarNotificationChannel();
     }
 
     private void createAdhanNotificationChannel() {
@@ -39,6 +41,23 @@ public class MainActivity extends BridgeActivity {
                     .build();
 
                 channel.setSound(soundUri, audioAttributes);
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void createAzkarNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                NotificationChannel channel = new NotificationChannel(
+                    AZKAR_CHANNEL_ID,
+                    "أذكار المسلم (الصباح والمساء)",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                );
+                channel.setDescription("تذكير يومي بمواعيد أذكار الصباح والمساء");
+                channel.enableVibration(true);
+                channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
                 manager.createNotificationChannel(channel);
             }
         }

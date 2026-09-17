@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { initPrayerAlarmChannel, requestPrayerAlarmPermissions } from './prayerAlarmScheduler';
+import { initPrayerAlarmChannel, initAzkarAlarmChannel } from './prayerAlarmScheduler';
 
 export const isNativeAndroid = (): boolean => {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
@@ -11,29 +11,46 @@ export const isNativeAndroid = (): boolean => {
 export const initNativeAndroid = async () => {
   if (!isNativeAndroid()) return;
 
+  // 1. Prevent ServiceWorker caching issues inside native Android WebView
   try {
-    // Configure native status bar with Emerald theme
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn('SW cleanup notice:', e);
+  }
+
+  // 2. Configure native status bar with Emerald theme
+  try {
     await StatusBar.setStyle({ style: Style.Dark });
     await StatusBar.setBackgroundColor({ color: '#064e3b' });
   } catch (e) {
     console.warn('Status bar config error:', e);
   }
 
+  // 3. Initialize notification channels for Adhan and Azkar without prompting permission
   try {
-    // Initialize notification channel for Adhan and request notification & alarm permissions
     await initPrayerAlarmChannel();
-    await requestPrayerAlarmPermissions();
+    await initAzkarAlarmChannel();
   } catch (e) {
-    console.warn('Adhan notification initialization error:', e);
+    console.warn('Notification channels initialization error:', e);
   }
 
+  // 4. Hide splash screen smoothly after app initialization
   try {
-    // Hide splash screen smoothly after app initialization
     setTimeout(async () => {
-      await SplashScreen.hide({
-        fadeOutDuration: 400,
-      });
-    }, 600);
+      try {
+        await SplashScreen.hide({
+          fadeOutDuration: 300,
+        });
+      } catch {
+        // Fallback ignore
+      }
+    }, 250);
   } catch (e) {
     console.warn('Splash screen hide error:', e);
   }
