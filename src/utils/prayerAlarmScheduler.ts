@@ -8,6 +8,7 @@ import { UserSettings } from '../types';
 import { getCalculationParameters } from './prayerCalculations';
 
 export const ADHAN_CHANNEL_ID = 'salati_adhan_channel';
+export const ADHAN_FAJR_CHANNEL_ID = 'salati_adhan_fajr_channel';
 export const AZKAR_CHANNEL_ID = 'salati_azkar_channel';
 
 const PRAYER_NOTIFICATION_START_ID = 1000;
@@ -23,13 +24,27 @@ export async function initPrayerAlarmChannel(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
   try {
+    // Normal prayer adhan channel (Dhuhr, Asr, Maghrib, Isha)
     await LocalNotifications.createChannel({
       id: ADHAN_CHANNEL_ID,
       name: 'أذان الصلاة',
       description: 'تنبيهات مواقيت الصلاة مع صوت الأذان',
       importance: 5,
       visibility: 1,
-      sound: 'adhan.mp3',
+      sound: 'adhan_normal.mp3',
+      vibration: true,
+      lights: true,
+      lightColor: '#059669',
+    });
+
+    // Fajr adhan channel
+    await LocalNotifications.createChannel({
+      id: ADHAN_FAJR_CHANNEL_ID,
+      name: 'أذان الفجر',
+      description: 'تنبيهات صلاة الفجر مع صوت أذان الفجر',
+      importance: 5,
+      visibility: 1,
+      sound: 'adhan_fajr.mp3',
       vibration: true,
       lights: true,
       lightColor: '#059669',
@@ -540,9 +555,14 @@ export async function scheduleAutomaticAdhanAlarms(
             },
 
             channelId:
-              ADHAN_CHANNEL_ID,
+              prayer.key === 'fajr'
+                ? ADHAN_FAJR_CHANNEL_ID
+                : ADHAN_CHANNEL_ID,
 
-            sound: 'adhan.mp3',
+            sound:
+              prayer.key === 'fajr'
+                ? 'adhan_fajr.mp3'
+                : 'adhan_normal.mp3',
 
             smallIcon: 'ic_launcher',
 

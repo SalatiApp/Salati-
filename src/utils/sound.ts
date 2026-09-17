@@ -91,7 +91,11 @@ class SoundManager {
   }
 
   // Play Adhan audio using local MP3 file (100% offline, zero external dependencies)
-  async playAdhan(type: 'full' | 'takbeer' | 'beep' | 'silent' = 'full'): Promise<void> {
+  // fajr -> adhan_fajr.mp3, all other prayers -> adhan_normal.mp3
+  async playAdhan(
+    type: 'full' | 'takbeer' | 'beep' | 'silent' = 'full',
+    prayerId?: string
+  ): Promise<void> {
     if (type === 'silent') return;
 
     if (type === 'beep') {
@@ -105,29 +109,41 @@ class SoundManager {
     }
 
     // Full Adhan: Play local offline MP3 file
+    // Fajr prayer uses adhan_fajr.mp3, other prayers use adhan_normal.mp3
     this.stopAudio();
+
+    const isFajr = prayerId?.toLowerCase() === 'fajr';
+    const primaryFile = isFajr ? 'adhan_fajr.mp3' : 'adhan_normal.mp3';
 
     return new Promise((resolve) => {
       // Build candidate local paths to ensure compatibility with Capacitor Android and Web
       const candidates: string[] = [];
       try {
         const base = document.baseURI || window.location.href;
-        candidates.push(new URL('audio/adhan.mp3', base).href);
-        candidates.push(new URL('adhan.mp3', base).href);
+        candidates.push(new URL(`audio/${primaryFile}`, base).href);
+        candidates.push(new URL(primaryFile, base).href);
       } catch {}
 
       try {
         const baseUrl = import.meta.env.BASE_URL || '/';
         const cleanBase = baseUrl.replace(/\/+$/, '');
-        candidates.push(`${cleanBase}/audio/adhan.mp3`);
-        candidates.push(`${cleanBase}/adhan.mp3`);
+        candidates.push(`${cleanBase}/audio/${primaryFile}`);
+        candidates.push(`${cleanBase}/${primaryFile}`);
       } catch {}
 
-      candidates.push('/audio/adhan.mp3');
-      candidates.push('audio/adhan.mp3');
-      candidates.push('./audio/adhan.mp3');
-      candidates.push('/adhan.mp3');
-      candidates.push('adhan.mp3');
+      candidates.push(`/audio/${primaryFile}`);
+      candidates.push(`audio/${primaryFile}`);
+      candidates.push(`./audio/${primaryFile}`);
+      candidates.push(`/${primaryFile}`);
+      candidates.push(primaryFile);
+
+      // Fallback candidates: try adhan_normal.mp3 if primary was fajr and vice versa
+      const fallbackFile = isFajr ? 'adhan_normal.mp3' : 'adhan_fajr.mp3';
+      candidates.push(`/audio/${fallbackFile}`);
+      candidates.push(`audio/${fallbackFile}`);
+      candidates.push(`./audio/${fallbackFile}`);
+      candidates.push(`/${fallbackFile}`);
+      candidates.push(fallbackFile);
 
       // Unique candidates
       const uniqueCandidates = Array.from(new Set(candidates));
@@ -198,7 +214,7 @@ export const checkNotificationPermission = checkPrayerAlarmPermissions;
 export const requestNotificationPermission = requestPrayerAlarmPermissions;
 
 export function sendPrayerNotification(prayerName: string, timeFormatted?: string) {
-  // On native Android, exact alarms with local adhan.mp3 are handled via @capacitor/local-notifications
+  // On native Android, exact alarms with local adhan audio files are handled via @capacitor/local-notifications
   if (Capacitor.isNativePlatform()) {
     return;
   }

@@ -302,7 +302,7 @@ export default function App() {
       }
 
       try {
-        soundManager.playAdhan(settings.adhanType);
+        soundManager.playAdhan(settings.adhanType, prayer.id);
       } catch {
         // Ignore sound errors.
       }

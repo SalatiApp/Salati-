@@ -32,6 +32,7 @@ import {
 } from '../utils/sound';
 
 import { scheduleAutomaticAdhanAlarms } from '../utils/prayerAlarmScheduler';
+import { calculateDailyPrayers } from '../utils/prayerCalculations';
 import { Capacitor } from '@capacitor/core';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { CitySelectionModal } from './CitySelectionModal';
@@ -183,8 +184,24 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
       setIsPlayingTestAdhan(true);
 
       try {
+        let activePrayerId = 'dhuhr';
+        try {
+          const prayerCalc = calculateDailyPrayers(
+            cityLat,
+            cityLng,
+            new Date(),
+            settings
+          );
+          if (prayerCalc.nextPrayerItem?.id) {
+            activePrayerId = prayerCalc.nextPrayerItem.id;
+          }
+        } catch {
+          // Fallback to standard prayer if calculation encounters error
+        }
+
         await soundManager.playAdhan(
-          settings.adhanType
+          settings.adhanType,
+          activePrayerId
         );
       } finally {
         setIsPlayingTestAdhan(false);
