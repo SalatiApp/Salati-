@@ -64,6 +64,8 @@ export async function initAzkarNotificationChannel(): Promise<void> {
   }
 }
 
+export const initAzkarAlarmChannel = initAzkarNotificationChannel;
+
 export async function checkPrayerAlarmPermissions(): Promise<boolean> {
   if (Capacitor.isNativePlatform()) {
     try {

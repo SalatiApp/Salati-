@@ -197,14 +197,16 @@ export const soundManager = new SoundManager();
 export const checkNotificationPermission = checkPrayerAlarmPermissions;
 export const requestNotificationPermission = requestPrayerAlarmPermissions;
 
-export function sendPrayerNotification(prayerName: string) {
+export function sendPrayerNotification(prayerName: string, timeFormatted?: string) {
   // On native Android, exact alarms with local adhan.mp3 are handled via @capacitor/local-notifications
   if (Capacitor.isNativePlatform()) {
     return;
   }
   if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
     new Notification(`حان الآن موعد أذان ${prayerName}`, {
-      body: `حي على الصلاة، حي على الفلاح. تقبل الله طاعتكم.`,
+      body: timeFormatted
+        ? `حي على الصلاة، حي على الفلاح (${timeFormatted}). تقبل الله طاعتكم.`
+        : `حي على الصلاة، حي على الفلاح. تقبل الله طاعتكم.`,
       icon: '/favicon.ico',
       tag: `prayer-${prayerName}`,
     });

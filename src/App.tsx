@@ -331,7 +331,7 @@ export default function App() {
   const renderCurrentView = () => {
     switch (currentTab) {
       case 'quran':
-        return <QuranView settings={settings} />;
+        return <QuranView initialFontSize={settings.quranFontSize} />;
 
       case 'azkar':
         return <AzkarView />;
@@ -343,6 +343,7 @@ export default function App() {
         return (
           <SettingsView
             settings={settings}
+            onUpdateSettings={updateSettings}
             updateSettings={updateSettings}
             currentCity={currentCity}
             onSelectCity={handleSelectCity}
@@ -353,11 +354,17 @@ export default function App() {
       default:
         return (
           <PrayerTimesView
+            prayers={prayerData.prayers}
+            nextPrayerItem={prayerData.nextPrayerItem}
+            timeRemainingSeconds={prayerData.timeRemainingSeconds}
+            progressPercent={prayerData.progressPercent}
             prayerData={prayerData}
-            settings={settings}
-            updateSettings={updateSettings}
-            onUpdatePrayerAlert={handleUpdatePrayerAlert}
             currentCity={currentCity}
+            settings={settings}
+            onUpdatePrayerAlert={handleUpdatePrayerAlert}
+            onOpenQibla={() => setIsQiblaOpen(true)}
+            onOpenTasbeeh={() => setIsTasbeehOpen(true)}
+            onOpenSettings={() => setCurrentTab('settings')}
             isMuted={isMuted}
             setIsMuted={setIsMuted}
           />
@@ -376,22 +383,27 @@ export default function App() {
           ? 'bg-slate-950 text-white'
           : settings.theme === 'midnight'
           ? 'bg-[#07111f] text-white'
-          : 'bg-slate-50 text-slate-900'
+          : 'bg-[#f3f7f5] text-slate-900'
       }`}
     >
       <Navbar
+        currentCity={currentCity}
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         onOpenQibla={() => setIsQiblaOpen(true)}
         onOpenTasbeeh={() => setIsTasbeehOpen(true)}
+        onOpenSettings={() => setCurrentTab('settings')}
+        isMuted={isMuted}
+        onToggleMute={() => setIsMuted(!isMuted)}
       />
 
-      <main className="pb-24">
+      <main className="w-full max-w-xl mx-auto px-2.5 sm:px-4 py-2.5 pb-20">
         {renderCurrentView()}
       </main>
 
       <BottomNav
         currentTab={currentTab}
+        onTabChange={setCurrentTab}
         setCurrentTab={setCurrentTab}
         onOpenTasbeeh={() => setIsTasbeehOpen(true)}
       />
@@ -399,6 +411,7 @@ export default function App() {
       <QiblaModal
         isOpen={isQiblaOpen}
         onClose={() => setIsQiblaOpen(false)}
+        currentCity={currentCity}
       />
 
       <TasbeehModal

@@ -38,17 +38,26 @@ import { CitySelectionModal } from './CitySelectionModal';
 
 interface SettingsViewProps {
   settings: UserSettings;
-  currentCity: CityData;
-  onUpdateSettings: (newSettings: Partial<UserSettings>) => void;
-  onSelectCity: (city: CityData) => void;
+  currentCity?: CityData;
+  onUpdateSettings?: (newSettings: Partial<UserSettings>) => void;
+  updateSettings?: (newSettings: Partial<UserSettings>) => void;
+  onSelectCity?: (city: CityData) => void;
 }
 
 const SettingsViewComponent: React.FC<SettingsViewProps> = ({
   settings,
   currentCity,
-  onUpdateSettings,
-  onSelectCity,
+  onUpdateSettings: propOnUpdateSettings,
+  updateSettings: propUpdateSettings,
+  onSelectCity = () => {},
 }) => {
+  const onUpdateSettings = propOnUpdateSettings || propUpdateSettings || (() => {});
+  const cityName = currentCity?.nameAr || 'مكة المكرمة';
+  const countryName = currentCity?.countryAr || 'المملكة العربية السعودية';
+  const cityLat = currentCity?.latitude ?? 21.4225;
+  const cityLng = currentCity?.longitude ?? 39.8262;
+  const cityId = currentCity?.id || 'makkah';
+
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<string | null>(null);
   const [isPlayingTestAdhan, setIsPlayingTestAdhan] = useState(false);
@@ -193,8 +202,8 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
     if (granted) {
       if (Capacitor.isNativePlatform()) {
         await scheduleAutomaticAdhanAlarms(
-          currentCity.latitude,
-          currentCity.longitude,
+          cityLat,
+          cityLng,
           settings
         );
       }
@@ -248,12 +257,12 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
             </span>
 
             <span className="font-bold text-base text-slate-900 dark:text-slate-100">
-              {currentCity.nameAr} ({currentCity.countryAr})
+              {cityName} ({countryName})
             </span>
 
             <span className="text-[11px] text-slate-400 block font-mono mt-0.5">
-              خط العرض: {currentCity.latitude.toFixed(2)}°،
-              خط الطول: {currentCity.longitude.toFixed(2)}°
+              خط العرض: {cityLat.toFixed(2)}°،
+              خط الطول: {cityLng.toFixed(2)}°
             </span>
           </div>
 
@@ -987,7 +996,7 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
         onClose={() =>
           setIsCityModalOpen(false)
         }
-        currentCityId={currentCity.id}
+        currentCityId={cityId}
         onSelectCity={onSelectCity}
       />
 

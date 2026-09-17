@@ -6,14 +6,18 @@ import { getQiblaDirection } from '../utils/prayerCalculations';
 interface QiblaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentCity: CityData;
+  currentCity?: CityData;
 }
 
 export const QiblaModal: React.FC<QiblaModalProps> = ({ isOpen, onClose, currentCity }) => {
   const [deviceHeading, setDeviceHeading] = useState<number | null>(null);
   const [manualOffset, setManualOffset] = useState<number>(0);
 
-  const qiblaAngle = getQiblaDirection(currentCity.latitude, currentCity.longitude);
+  const cityLat = currentCity?.latitude ?? 21.4225;
+  const cityLng = currentCity?.longitude ?? 39.8262;
+  const cityName = currentCity?.nameAr || 'مكة المكرمة';
+
+  const qiblaAngle = getQiblaDirection(cityLat, cityLng);
 
   // Calculate distance in km to Kaaba using Haversine formula
   const calculateDistanceToMakkah = (lat: number, lng: number): number => {
@@ -32,7 +36,7 @@ export const QiblaModal: React.FC<QiblaModalProps> = ({ isOpen, onClose, current
     return Math.round(R * c);
   };
 
-  const distanceKm = calculateDistanceToMakkah(currentCity.latitude, currentCity.longitude);
+  const distanceKm = calculateDistanceToMakkah(cityLat, cityLng);
 
   // Listen to device orientation if available on mobile
   useEffect(() => {
@@ -72,7 +76,7 @@ export const QiblaModal: React.FC<QiblaModalProps> = ({ isOpen, onClose, current
             <div>
               <h2 className="font-bold text-base font-tajawal">بوصلة القبلة المشرفة</h2>
               <p className="text-[11px] text-emerald-300">
-                من {currentCity.nameAr} نحو الكعبة المشرفة
+                من {cityName} نحو الكعبة المشرفة
               </p>
             </div>
           </div>
