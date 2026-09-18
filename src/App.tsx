@@ -14,7 +14,7 @@ import React, {
 import { CITIES } from './data/cities';
 import { CityData, TabType, UserSettings } from './types';
 import { calculateDailyPrayers } from './utils/prayerCalculations';
-import { sendPrayerNotification, soundManager } from './utils/sound';
+import { sendPrayerNotification, sendPrePrayerNotification, soundManager } from './utils/sound';
 import { scheduleAutomaticAdhanAlarms } from './utils/prayerAlarmScheduler';
 
 import { Navbar } from './components/Navbar';
@@ -77,6 +77,7 @@ export default function App() {
   const [now, setNow] = useState<Date>(new Date());
 
   const lastAlertMinuteRef = useRef<string>('');
+  const lastPreAlertMinuteRef = useRef<string>('');
 
   // ---------------------------------------------------------
   // Handle shortcut URLs
@@ -250,12 +251,44 @@ export default function App() {
   ]);
 
   // ---------------------------------------------------------
-  // Foreground prayer alert
+  // Foreground prayer alert & 5-min pre-prayer notification
   // ---------------------------------------------------------
 
   useEffect(() => {
     const currentMinuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
 
+    // 1. Check 5-minute pre-prayer notification
+    if (lastPreAlertMinuteRef.current !== currentMinuteKey) {
+      prayerData.prayers.forEach((prayer) => {
+        if (prayer.id === 'sunrise') {
+          return;
+        }
+
+        const prayerId = prayer.id as keyof UserSettings['prayerAlerts'];
+        const isEnabled = settings.prayerAlerts[prayerId];
+        if (!isEnabled) {
+          return;
+        }
+
+        const prePrayerMs = prayer.time.getTime() - 5 * 60 * 1000;
+        const preDate = new Date(prePrayerMs);
+
+        const isPreMinute =
+          preDate.getHours() === now.getHours() &&
+          preDate.getMinutes() === now.getMinutes();
+
+        if (isPreMinute) {
+          lastPreAlertMinuteRef.current = currentMinuteKey;
+          try {
+            sendPrePrayerNotification(prayer.nameAr);
+          } catch {
+            // Ignore notification errors.
+          }
+        }
+      });
+    }
+
+    // 2. Check exact prayer Adhan alert
     if (lastAlertMinuteRef.current === currentMinuteKey) {
       return;
     }

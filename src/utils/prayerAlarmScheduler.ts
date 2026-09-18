@@ -9,10 +9,14 @@ import { getCalculationParameters } from './prayerCalculations';
 
 export const ADHAN_CHANNEL_ID = 'salati_adhan_channel';
 export const ADHAN_FAJR_CHANNEL_ID = 'salati_adhan_fajr_channel';
+export const PRE_PRAYER_CHANNEL_ID = 'salati_pre_prayer_channel';
 export const AZKAR_CHANNEL_ID = 'salati_azkar_channel';
 
 const PRAYER_NOTIFICATION_START_ID = 1000;
 const PRAYER_NOTIFICATION_END_ID = 1999;
+
+const PRE_PRAYER_NOTIFICATION_START_ID = 4000;
+const PRE_PRAYER_NOTIFICATION_END_ID = 4999;
 
 const MORNING_AZKAR_START_ID = 2000;
 const MORNING_AZKAR_END_ID = 2999;
@@ -48,6 +52,18 @@ export async function initPrayerAlarmChannel(): Promise<void> {
       vibration: true,
       lights: true,
       lightColor: '#059669',
+    });
+
+    // Pre-prayer 5-minute reminder channel
+    await LocalNotifications.createChannel({
+      id: PRE_PRAYER_CHANNEL_ID,
+      name: 'تنبيه قبل الصلاة (5 دقائق)',
+      description: 'تنبيهات مسبقة قبل دخول وقت الصلاة بـ 5 دقائق',
+      importance: 4,
+      visibility: 1,
+      vibration: true,
+      lights: true,
+      lightColor: '#10B981',
     });
   } catch (err) {
     console.warn(
@@ -226,10 +242,14 @@ async function cancelPrayerNotifications(): Promise<void> {
       pending.notifications
         .filter(
           notification =>
-            notification.id >=
+            (notification.id >=
               PRAYER_NOTIFICATION_START_ID &&
             notification.id <=
-              PRAYER_NOTIFICATION_END_ID
+              PRAYER_NOTIFICATION_END_ID) ||
+            (notification.id >=
+              PRE_PRAYER_NOTIFICATION_START_ID &&
+            notification.id <=
+              PRE_PRAYER_NOTIFICATION_END_ID)
         )
         .map(notification => ({
           id: notification.id,
@@ -567,6 +587,32 @@ export async function scheduleAutomaticAdhanAlarms(
           continue;
         }
 
+        // 1. Schedule 5-minute pre-prayer notification
+        const prePrayerTime = new Date(
+          prayerTime.getTime() - 5 * 60 * 1000
+        );
+
+        if (prePrayerTime.getTime() > now.getTime()) {
+          const preNotificationId =
+            PRE_PRAYER_NOTIFICATION_START_ID +
+            dayOffset * 10 +
+            prayer.index;
+
+          notificationsToSchedule.push({
+            id: preNotificationId,
+            title: `اقتراب موعد الصلاة`,
+            body: `الصلاة القادمة: ${prayer.nameAr} — بعد 5 دقائق`,
+            schedule: {
+              at: prePrayerTime,
+              allowWhileIdle: true,
+            },
+            channelId: PRE_PRAYER_CHANNEL_ID,
+            smallIcon: 'ic_launcher',
+            autoCancel: true,
+          });
+        }
+
+        // 2. Schedule Adhan notification at exact prayer time
         if (
           prayerTime.getTime() >
           now.getTime()

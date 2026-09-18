@@ -243,10 +243,23 @@ export function sendPrayerNotification(prayerName: string, timeFormatted?: strin
   if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
     new Notification(`حان الآن موعد أذان ${prayerName}`, {
       body: timeFormatted
-        ? `حي على الصلاة، حي على الفلاح (${timeFormatted}). تقبل الله طاعتكم.`
-        : `حي على الصلاة، حي على الفلاح. تقبل الله طاعتكم.`,
+        ? `الله أكبر - حان وقت صلاة ${prayerName} (${timeFormatted}). تقبل الله طاعتكم.`
+        : `الله أكبر - حان وقت صلاة ${prayerName}. تقبل الله طاعتكم.`,
       icon: '/favicon.ico',
       tag: `prayer-${prayerName}`,
+    });
+  }
+}
+
+export function sendPrePrayerNotification(prayerName: string) {
+  if (Capacitor.isNativePlatform()) {
+    return;
+  }
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    new Notification(`اقتراب موعد الصلاة`, {
+      body: `الصلاة القادمة: ${prayerName} — بعد 5 دقائق`,
+      icon: '/favicon.ico',
+      tag: `pre-prayer-${prayerName}`,
     });
   }
 }
