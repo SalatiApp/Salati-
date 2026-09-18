@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
   BookOpen, 
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { ALL_SURAHS, EMBEDDED_SURAHS, fetchFullSurah } from '../data/quranData';
 import { SurahDetail, SurahMeta } from '../types';
+import { matchSurah, getSurahMatchScore } from '../utils/arabicSearch';
 
 interface QuranViewProps {
   initialFontSize?: number;
@@ -52,19 +53,31 @@ export const QuranView: React.FC<QuranViewProps> = ({ initialFontSize = 24 }) =>
     };
   }, [audioElement]);
 
-  const filteredSurahs = ALL_SURAHS.filter((s) => {
-    const matchQuery =
-      s.nameAr.includes(searchQuery) ||
-      s.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      String(s.number) === searchQuery.trim();
+  const filteredSurahs = useMemo(() => {
+    const list = ALL_SURAHS.filter((s) => {
+      // 1. Filter pill check (revelation type or popular)
+      if (selectedFilter === 'meccan' && s.revelationType !== 'Meccan') return false;
+      if (selectedFilter === 'medinan' && s.revelationType !== 'Medinan') return false;
+      if (selectedFilter === 'popular' && !POPULAR_NUMBERS.includes(s.number)) return false;
 
-    if (!matchQuery) return false;
+      // 2. Search query match
+      return matchSurah(s, searchQuery);
+    });
 
-    if (selectedFilter === 'meccan') return s.revelationType === 'Meccan';
-    if (selectedFilter === 'medinan') return s.revelationType === 'Medinan';
-    if (selectedFilter === 'popular') return POPULAR_NUMBERS.includes(s.number);
-    return true;
-  });
+    // Sort by match relevance when user enters a search query
+    if (searchQuery.trim()) {
+      list.sort((a, b) => {
+        const scoreA = getSurahMatchScore(a, searchQuery);
+        const scoreB = getSurahMatchScore(b, searchQuery);
+        if (scoreA !== scoreB) {
+          return scoreA - scoreB;
+        }
+        return a.number - b.number;
+      });
+    }
+
+    return list;
+  }, [searchQuery, selectedFilter]);
 
   const handleOpenSurah = async (meta: SurahMeta) => {
     setIsLoadingSurah(true);
