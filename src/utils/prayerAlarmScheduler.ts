@@ -65,7 +65,7 @@ export async function initAzkarNotificationChannel(): Promise<void> {
       id: AZKAR_CHANNEL_ID,
       name: 'أذكار الصباح والمساء',
       description: 'تنبيهات يومية لأذكار الصباح والمساء',
-      importance: 4,
+      importance: 5,
       visibility: 1,
       vibration: true,
       lights: true,
@@ -87,7 +87,21 @@ export async function checkPrayerAlarmPermissions(): Promise<boolean> {
       const status =
         await LocalNotifications.checkPermissions();
 
-      return status.display === 'granted';
+      if (status.display !== 'granted') {
+        return false;
+      }
+
+      try {
+        const exactSetting =
+          await LocalNotifications.checkExactNotificationSetting();
+        if (exactSetting && exactSetting.exact_alarm === 'denied') {
+          return false;
+        }
+      } catch {
+        // Platform or OS does not support checkExactNotificationSetting
+      }
+
+      return true;
     } catch (err) {
       console.warn(
         'Error checking notification permissions:',
@@ -111,8 +125,27 @@ export async function checkPrayerAlarmPermissions(): Promise<boolean> {
 export async function requestPrayerAlarmPermissions(): Promise<boolean> {
   if (Capacitor.isNativePlatform()) {
     try {
-      const status =
-        await LocalNotifications.requestPermissions();
+      let status =
+        await LocalNotifications.checkPermissions();
+
+      if (status.display !== 'granted') {
+        status =
+          await LocalNotifications.requestPermissions();
+      }
+
+      try {
+        const exactSetting =
+          await LocalNotifications.checkExactNotificationSetting();
+        if (
+          exactSetting &&
+          (exactSetting.exact_alarm === 'denied' ||
+            exactSetting.exact_alarm === 'prompt')
+        ) {
+          await LocalNotifications.changeExactNotificationSetting();
+        }
+      } catch (exactErr) {
+        console.warn('Exact alarm check/request failed:', exactErr);
+      }
 
       return status.display === 'granted';
     } catch (err) {
@@ -217,33 +250,52 @@ async function cancelPrayerNotifications(): Promise<void> {
 
 async function cancelAzkarNotifications(): Promise<void> {
   try {
+    const idsToCancel: { id: number }[] = [];
+
     const pending =
       await LocalNotifications.getPending();
 
-    const azkarNotifications =
-      pending.notifications
-        .filter(
-          notification =>
-            (
-              notification.id >=
-                MORNING_AZKAR_START_ID &&
-              notification.id <=
-                MORNING_AZKAR_END_ID
-            ) ||
-            (
-              notification.id >=
-                EVENING_AZKAR_START_ID &&
-              notification.id <=
-                EVENING_AZKAR_END_ID
-            )
-        )
-        .map(notification => ({
-          id: notification.id,
-        }));
+    if (pending && Array.isArray(pending.notifications)) {
+      const azkarNotifications =
+        pending.notifications
+          .filter(
+            notification =>
+              (
+                notification.id >=
+                  MORNING_AZKAR_START_ID &&
+                notification.id <=
+                  MORNING_AZKAR_END_ID
+              ) ||
+              (
+                notification.id >=
+                  EVENING_AZKAR_START_ID &&
+                notification.id <=
+                  EVENING_AZKAR_END_ID
+              )
+          )
+          .map(notification => ({
+            id: notification.id,
+          }));
 
-    if (azkarNotifications.length > 0) {
+      idsToCancel.push(...azkarNotifications);
+    }
+
+    // Also proactively cancel all potential IDs in the 14-day window
+    // to guarantee no duplicate or orphan alarms remain
+    for (let dayOffset = 0; dayOffset < 15; dayOffset++) {
+      const morningId = MORNING_AZKAR_START_ID + dayOffset;
+      const eveningId = EVENING_AZKAR_START_ID + dayOffset;
+      if (!idsToCancel.some(item => item.id === morningId)) {
+        idsToCancel.push({ id: morningId });
+      }
+      if (!idsToCancel.some(item => item.id === eveningId)) {
+        idsToCancel.push({ id: eveningId });
+      }
+    }
+
+    if (idsToCancel.length > 0) {
       await LocalNotifications.cancel({
-        notifications: azkarNotifications,
+        notifications: idsToCancel,
       });
     }
   } catch (err) {
@@ -264,44 +316,38 @@ export async function scheduleAutomaticAzkarNotifications(
 
     await cancelAzkarNotifications();
 
-    const now = new Date();
-
-    const notificationsToSchedule: LocalNotificationSchema[] =
-      [];
-
-    const DAYS_TO_SCHEDULE = 7;
-
-    /*
-     * Optional settings are treated as enabled by default.
-     * This keeps Azkar notifications working for existing users
-     * who already had the feature enabled before the switches
-     * were added.
-     */
     const morningEnabled =
       settings.morningAzkarAlerts !== false;
 
     const eveningEnabled =
       settings.eveningAzkarAlerts !== false;
 
+    // If both morning and evening Azkar are disabled, nothing to schedule
+    if (!morningEnabled && !eveningEnabled) {
+      console.log('Azkar notifications are disabled in settings.');
+      return 0;
+    }
+
+    const now = new Date();
+
+    const notificationsToSchedule: LocalNotificationSchema[] =
+      [];
+
+    const DAYS_TO_SCHEDULE = 14;
+
     for (
       let dayOffset = 0;
       dayOffset < DAYS_TO_SCHEDULE;
       dayOffset++
     ) {
-      const targetDate = new Date(now);
-
-      targetDate.setDate(
-        now.getDate() + dayOffset
-      );
-
       /*
        * Morning Azkar - 07:00
        */
       if (morningEnabled) {
-        const morningTime =
-          new Date(targetDate);
-
-        morningTime.setHours(
+        const morningTime = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() + dayOffset,
           7,
           0,
           0,
@@ -341,10 +387,10 @@ export async function scheduleAutomaticAzkarNotifications(
        * Evening Azkar - 18:00
        */
       if (eveningEnabled) {
-        const eveningTime =
-          new Date(targetDate);
-
-        eveningTime.setHours(
+        const eveningTime = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() + dayOffset,
           18,
           0,
           0,
