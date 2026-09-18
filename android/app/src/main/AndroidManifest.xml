@@ -33,6 +33,12 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Google AdMob Application ID: المعرف الرسمي للاختبار من جوجل للتطوير (Google Official Sample App ID) -->
+        <!-- عند النشر للإنتاج، استبدل هذه القيمة بمعرف تطبيقك الحقيقي من حساب AdMob -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"/>
     </application>
 
     <!-- Permissions for Prayer Times, Adhan & Qibla -->

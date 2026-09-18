@@ -27,6 +27,7 @@ import { SettingsView } from './components/SettingsView';
 import { QiblaModal } from './components/QiblaModal';
 import { TasbeehModal } from './components/TasbeehModal';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
+import { adMobService } from './services/adMobService';
 
 const DEFAULT_SETTINGS: UserSettings = {
   locationMode: 'city',
@@ -104,6 +105,18 @@ export default function App() {
       // Ignore URL parsing errors.
     }
   }, []);
+
+  // ---------------------------------------------------------
+  // Google AdMob Initialization & Tab Tracking (Native Android)
+  // ---------------------------------------------------------
+
+  useEffect(() => {
+    adMobService.initialize();
+  }, []);
+
+  useEffect(() => {
+    adMobService.handleTabChange(currentTab, isMuted);
+  }, [currentTab, isMuted]);
 
   // ---------------------------------------------------------
   // Save settings
