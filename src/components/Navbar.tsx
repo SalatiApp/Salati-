@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Volume2, VolumeX, Download, MapPin, Navigation } from 'lucide-react';
+import React from 'react';
+import { Volume2, VolumeX, Download } from 'lucide-react';
 import { getFormattedGregorianDate, getFormattedHijriDate } from '../utils/prayerCalculations';
 import { CityData, UserSettings } from '../types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
@@ -18,29 +18,13 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  currentCity,
-  currentTab,
-  setCurrentTab,
-  onOpenSettings,
   isMuted = false,
   onToggleMute,
   onInstallClick,
-  onUpdateSettings,
 }) => {
   const hijriDate = getFormattedHijriDate();
   const gregorianDate = getFormattedGregorianDate();
   const { isInstallable, isInstalled, install } = usePWAInstall();
-  const [isLocating, setIsLocating] = useState(false);
-
-  const cityName = currentCity?.nameAr || 'موقعي الحالي (GPS)';
-
-  const handleOpenSettings = () => {
-    if (onOpenSettings) {
-      onOpenSettings();
-    } else if (setCurrentTab) {
-      setCurrentTab('settings');
-    }
-  };
 
   const handleInstall = async () => {
     if (onInstallClick) {
@@ -50,101 +34,65 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const handleGpsLocation = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!('geolocation' in navigator)) {
-      handleOpenSettings();
-      return;
-    }
-
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setIsLocating(false);
-        const { latitude, longitude } = position.coords;
-        if (onUpdateSettings) {
-          onUpdateSettings({
-            locationMode: 'gps',
-            customCoordinates: {
-              latitude,
-              longitude,
-              cityName: 'موقعي الحالي (GPS)',
-            },
-          });
-        }
-      },
-      () => {
-        setIsLocating(false);
-        handleOpenSettings();
-      },
-      {
-        timeout: 10000,
-        enableHighAccuracy: true,
-      }
-    );
-  };
-
   return (
     <header className="sticky top-0 z-30 bg-emerald-900/95 backdrop-blur-md text-white border-b border-emerald-800/60 shadow-sm">
-      <div className="w-full max-w-xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
-        {/* Brand & Location Info */}
-        <div className="flex items-center gap-3 min-w-0">
-          <img
-            src="/pwa-192x192.png"
-            alt="شعار صلاتي"
-            className="w-12 h-12 rounded-2xl border border-amber-400/40 shadow-md shrink-0 object-cover"
-          />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white font-tajawal drop-shadow-xs">
-                صلاتي
-              </h1>
-              <button
-                onClick={handleGpsLocation}
-                className="text-xs px-2.5 py-1 rounded-full bg-emerald-800/90 hover:bg-emerald-750 text-emerald-100 transition flex items-center gap-1.5 border border-emerald-700/60 shadow-xs active:scale-95"
-                title="تحديد وتغيير الموقع الجغرافي"
-              >
-                <Navigation className={`w-3.5 h-3.5 text-amber-300 ${isLocating ? 'animate-spin' : ''}`} />
-                <span className="font-medium truncate max-w-[140px] sm:max-w-[180px]">
-                  {isLocating ? 'جاري التحديد...' : cityName.includes('GPS') ? 'موقعي الحالي (GPS)' : `موقعي: ${cityName}`}
-                </span>
-              </button>
-            </div>
-            <p className="text-[11px] text-emerald-300/90 font-medium mt-0.5 truncate">
-              {hijriDate} • <span className="text-emerald-400/80">{gregorianDate}</span>
-            </p>
+      <div className="w-full max-w-xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3.5">
+        <div className="relative flex items-center justify-between min-h-[52px]">
+          {/* الجانب الأيمن: شعار التطبيق */}
+          <div className="flex items-center z-10">
+            <img
+              src="/pwa-192x192.png"
+              alt="شعار صلاتي"
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl border border-amber-400/40 shadow-md object-cover"
+            />
           </div>
-        </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Quick PWA Install button if installable */}
-          {!isInstalled && isInstallable && (
-            <button
-              onClick={handleInstall}
-              className="px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition font-bold text-xs flex items-center gap-1 shadow-sm"
-              title="تثبيت التطبيق على الشاشة الرئيسية"
-            >
-              <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden sm:inline">تثبيت</span>
-            </button>
-          )}
+          {/* المنتصف تماماً: كلمة «صلاتي» وتحتها التاريخان مع مسافة مناسبة وتكبير أنيق */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-14 sm:px-16 text-center">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-wide text-white font-tajawal drop-shadow-sm leading-none mb-1.5">
+              صلاتي
+            </h1>
+            <div className="flex items-center justify-center gap-2 sm:gap-2.5 text-xs sm:text-sm font-semibold font-tajawal pointer-events-auto flex-wrap">
+              <span className="text-amber-300 drop-shadow-xs">
+                {hijriDate}
+              </span>
+              <span className="text-emerald-400/60 text-xs select-none">•</span>
+              <span className="text-emerald-100/90 font-medium">
+                {gregorianDate}
+              </span>
+            </div>
+          </div>
 
-          {/* Audio toggle */}
-          {onToggleMute && (
-            <button
-              onClick={onToggleMute}
-              className={`p-2 rounded-xl transition border active:scale-95 ${
-                isMuted
-                  ? 'bg-red-900/40 text-red-300 border-red-800/40'
-                  : 'bg-emerald-800/60 text-emerald-200 hover:bg-emerald-700/60 border-emerald-700/40'
-              }`}
-              title={isMuted ? 'الصوت مكتوم' : 'صوت الأذان مفعل'}
-              aria-label="تبديل الصوت"
-            >
-              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-            </button>
-          )}
+          {/* الجانب الأيسر: الأيقونات المتبقية (تثبيت التطبيق والصوت) بشكل متوازن */}
+          <div className="flex items-center gap-1.5 z-10">
+            {/* Quick PWA Install button if installable */}
+            {!isInstalled && isInstallable && (
+              <button
+                onClick={handleInstall}
+                className="px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition font-bold text-xs flex items-center gap-1 shadow-sm"
+                title="تثبيت التطبيق على الشاشة الرئيسية"
+              >
+                <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="hidden sm:inline">تثبيت</span>
+              </button>
+            )}
+
+            {/* Audio toggle */}
+            {onToggleMute && (
+              <button
+                onClick={onToggleMute}
+                className={`p-2 sm:p-2.5 rounded-xl transition border active:scale-95 shadow-xs ${
+                  isMuted
+                    ? 'bg-red-900/40 text-red-300 border-red-800/40'
+                    : 'bg-emerald-800/60 text-emerald-200 hover:bg-emerald-700/60 border-emerald-700/40'
+                }`}
+                title={isMuted ? 'الصوت مكتوم' : 'صوت الأذان مفعل'}
+                aria-label="تبديل الصوت"
+              >
+                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </header>

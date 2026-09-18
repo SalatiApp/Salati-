@@ -138,13 +138,13 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
           </div>
 
           {/* Next Prayer Title */}
-          <div className="text-center my-3">
-            <p className="text-xs uppercase tracking-wider text-emerald-300/90 font-semibold mb-1 font-tajawal">
+          <div className="text-center my-4 sm:my-5">
+            <p className="text-xs sm:text-sm uppercase tracking-widest text-emerald-300 font-semibold mb-2.5 sm:mb-3 font-tajawal drop-shadow-xs">
               الصلاة القادمة
             </p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-tajawal drop-shadow-md flex items-center justify-center gap-2.5">
-              <span>{effectiveNextPrayer?.nameAr || 'الفجر'}</span>
-              <span className="text-lg sm:text-xl font-normal text-emerald-200/90">
+            <h2 className="text-3xl sm:text-4xl font-black text-white font-tajawal drop-shadow-md flex items-baseline justify-center gap-3">
+              <span className="tracking-tight text-amber-300">{effectiveNextPrayer?.nameAr || 'الفجر'}</span>
+              <span className="text-lg sm:text-xl font-medium text-emerald-100/90 font-mono" dir="ltr">
                 ({effectiveNextPrayer?.timeFormatted || '--:--'})
               </span>
             </h2>
