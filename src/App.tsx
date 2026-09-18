@@ -30,8 +30,8 @@ import { PWAInstallBanner } from './components/PWAInstallBanner';
 
 const DEFAULT_SETTINGS: UserSettings = {
   locationMode: 'city',
-  selectedCityId: 'makkah',
-  calculationMethod: 'UmmAlQura',
+  selectedCityId: 'casablanca',
+  calculationMethod: 'MuslimWorldLeague',
   madhab: 'shafi',
   adhanType: 'full',
 
@@ -154,7 +154,7 @@ export default function App() {
       (city) => city.id === settings.selectedCityId
     );
 
-    return found || CITIES[0];
+    return found || CITIES.find((city) => city.id === 'casablanca') || CITIES[0];
   }, [
     settings.locationMode,
     settings.selectedCityId,
