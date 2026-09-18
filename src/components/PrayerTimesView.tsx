@@ -65,6 +65,11 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
   const [isPlayingAdhan, setIsPlayingAdhan] = useState(false);
   const countdown = formatSecondsToCountdown(effectiveTimeRemaining);
 
+  const isDhuhrNextPrayer =
+    effectiveNextPrayer?.id === 'dhuhr' ||
+    effectiveNextPrayer?.nameAr?.includes('ظهر') ||
+    effectiveNextPrayer?.nameAr?.includes('ظُهْر');
+
   const getPrayerIcon = (id: PrayerTimeItem['id'], isNext: boolean) => {
     const className = `w-5 h-5 ${isNext ? 'text-amber-300' : 'text-emerald-700 dark:text-emerald-400'}`;
     switch (id) {
@@ -143,7 +148,9 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
               الصلاة القادمة
             </p>
             <h2 className="text-3xl sm:text-4xl font-black text-white font-tajawal drop-shadow-md flex items-baseline justify-center gap-3">
-              <span className="tracking-tight text-amber-300">{effectiveNextPrayer?.nameAr || 'الفجر'}</span>
+              <span className={`tracking-tight ${isDhuhrNextPrayer ? 'text-white' : 'text-amber-300'}`}>
+                {effectiveNextPrayer?.nameAr || 'الفجر'}
+              </span>
               <span className="text-lg sm:text-xl font-medium text-emerald-100/90 font-mono" dir="ltr">
                 ({effectiveNextPrayer?.timeFormatted || '--:--'})
               </span>
