@@ -16,33 +16,26 @@ import {
 /**
  * إعدادات Google AdMob الرسمية:
  * -------------------------------------------------------------
- * 1. المعرفات التجريبية (Official Google Sample Test Ad Unit IDs):
- *    هذه المعرفات رسمية من شركة جوجل للاختبار أثناء التطوير:
- *    - Banner: ca-app-pub-3940256099942544/6300978111
- *    - Interstitial: ca-app-pub-3940256099942544/1033173712
- *    - Rewarded: ca-app-pub-3940256099942544/5224354917
- *
- * 2. المعرفات الحقيقية للإنتاج (Production Ad Unit IDs):
- *    عند النشر على Google Play، ستحتاج لاستخراجها من حسابك في Google AdMob
- *    واستبدال السلاسل الفارغة أدناه، مع ضبط isTesting إلى false.
+ * App ID: ca-app-pub-4276933033638806~5856813907
+ * Banner Ad Unit ID: ca-app-pub-4276933033638806/7486335201
  * -------------------------------------------------------------
  */
 export const ADMOB_CONFIG = {
-  // تفعيل وضع الاختبار (Test Ads) افتراضياً للأمان أثناء التطوير
-  isTesting: true,
+  // استخدام المعرفات الحقيقية للإنتاج
+  isTesting: false,
 
-  // المعرفات الرسمية للاختبار من وثائق جوجل الرسمية (Official Google Test IDs)
+  // المعرفات الحقيقية المعتمدة
+  productionIds: {
+    banner: 'ca-app-pub-4276933033638806/7486335201',
+    interstitial: '',
+    rewarded: '',
+  },
+
+  // المعرفات التجريبية السابقة للاحتياط إن دعت الحاجة
   testIds: {
     banner: 'ca-app-pub-3940256099942544/6300978111',
     interstitial: 'ca-app-pub-3940256099942544/1033173712',
     rewarded: 'ca-app-pub-3940256099942544/5224354917',
-  },
-
-  // ضع هنا المعرفات الحقيقية من حسابك في AdMob عند الجاهزية للنشر:
-  productionIds: {
-    banner: '',        // مثال: ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY
-    interstitial: '',  // مثال: ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY
-    rewarded: '',      // مثال: ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY
   },
 };
 
@@ -131,7 +124,7 @@ class AdMobService {
       await AdMob.showBanner(options);
       this.isBannerCreated = true;
       this.isBannerVisible = true;
-      console.log('[AdMob] Google Test Banner shown at BOTTOM_CENTER');
+      console.log('[AdMob] Banner shown at BOTTOM_CENTER');
     } catch (error) {
       console.warn('[AdMob] showBanner error:', error);
     }

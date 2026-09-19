@@ -81,10 +81,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           id="admob-banner-container"
           className="w-full flex items-center justify-center bg-slate-100/95 dark:bg-slate-950/95 border-t border-slate-200/80 dark:border-slate-800/80 h-[50px] min-h-[50px] transition-all duration-200 pb-[env(safe-area-inset-bottom,0px)] overflow-hidden select-none"
         >
-          {/* في وضع المعاينة والويب يظهر البانر الاختباري الرسمي، وعلى أندرويد تحتضن هذه المساحة إعلان AdMob الأصلي */}
+          {/* في وضع المعاينة والويب تظهر مساحة البانر المخصصة، وعلى أندرويد تحتضن هذه المساحة إعلان AdMob الأصلي */}
           <div className="flex items-center justify-center gap-2 py-1 px-3 text-slate-500 dark:text-slate-400">
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-400/40">
-              Google AdMob Test
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-400/40">
+              Google AdMob
             </span>
             <span className="text-xs font-mono font-medium">Banner Ad (320 × 50)</span>
           </div>
