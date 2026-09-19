@@ -110,15 +110,16 @@ export default function App() {
   // Google AdMob Initialization & Tab Tracking (Native Android)
   // ---------------------------------------------------------
 
-  const showAdBanner = adMobService.isBannerAllowed(currentTab, isMuted);
+  const isModalOpen = isQiblaOpen || isTasbeehOpen;
+  const showAdBanner = !isModalOpen && adMobService.isBannerAllowed(currentTab);
 
   useEffect(() => {
     adMobService.initialize();
   }, []);
 
   useEffect(() => {
-    adMobService.handleTabChange(currentTab, isMuted);
-  }, [currentTab, isMuted]);
+    adMobService.handleTabChange(currentTab, isModalOpen);
+  }, [currentTab, isModalOpen]);
 
   // ---------------------------------------------------------
   // Save settings
@@ -446,7 +447,11 @@ export default function App() {
         onUpdateSettings={updateSettings}
       />
 
-      <main className="w-full max-w-xl mx-auto px-2.5 sm:px-4 py-2.5 pb-20">
+      <main
+        className={`w-full max-w-xl mx-auto px-2.5 sm:px-4 py-2.5 transition-all duration-200 ${
+          showAdBanner ? 'pb-36 sm:pb-40' : 'pb-24 sm:pb-28'
+        }`}
+      >
         {renderCurrentView()}
       </main>
 
@@ -455,6 +460,7 @@ export default function App() {
         onTabChange={setCurrentTab}
         setCurrentTab={setCurrentTab}
         onOpenTasbeeh={() => setIsTasbeehOpen(true)}
+        showAdBanner={showAdBanner}
       />
 
       <QiblaModal

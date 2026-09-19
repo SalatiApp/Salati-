@@ -51,13 +51,13 @@ const INTERSTITIAL_COOLDOWN_MS = 10 * 60 * 1000;
 
 class AdMobService {
   private isInitialized = false;
+  private initPromise: Promise<void> | null = null;
+  private isBannerCreated = false;
   private isBannerVisible = false;
-  private lastInterstitialTime = 0;
-  private isInterstitialLoading = false;
 
   /**
    * تهيئة Google AdMob SDK على مستوى التطبيق.
-   * يتم استدعاؤها مرة واحدة عند إقلاع التطبيق على نظام Android.
+   * يتم استدعاؤها عند إقلاع التطبيق على نظام Android.
    */
   public async initialize(): Promise<void> {
     if (!Capacitor.isNativePlatform()) {
@@ -66,17 +66,24 @@ class AdMobService {
     }
 
     if (this.isInitialized) return;
+    if (this.initPromise) return this.initPromise;
 
-    try {
-      await AdMob.initialize({
-        initializeForTesting: ADMOB_CONFIG.isTesting,
-      });
+    this.initPromise = (async () => {
+      try {
+        await AdMob.initialize({
+          initializeForTesting: ADMOB_CONFIG.isTesting,
+        });
 
-      this.isInitialized = true;
-      console.log('[AdMob] Google AdMob SDK initialized successfully');
-    } catch (error) {
-      console.warn('[AdMob] Initialization failed or delayed:', error);
-    }
+        this.isInitialized = true;
+        console.log('[AdMob] Google AdMob SDK initialized successfully');
+      } catch (error) {
+        console.warn('[AdMob] Initialization failed or delayed:', error);
+      } finally {
+        this.initPromise = null;
+      }
+    })();
+
+    return this.initPromise;
   }
 
   /**
@@ -91,7 +98,7 @@ class AdMobService {
   }
 
   /**
-   * إظهار إعلان بانر (Banner Ad) في أسفل الشاشة مباشرة أسفل شريط التنقل.
+   * إظهار إعلان بانر (Banner Ad) في أسفل الشاشة مباشرة تحت شريط التنقل السفلي.
    */
   public async showBanner(position: BannerAdPosition = BannerAdPosition.BOTTOM_CENTER): Promise<void> {
     if (!Capacitor.isNativePlatform()) return;
@@ -101,6 +108,18 @@ class AdMobService {
     }
 
     try {
+      // إذا كان البانر قد تم إنشاؤه مسبقاً وكان مخفياً، نستعيده عبر resumeBanner
+      if (this.isBannerCreated) {
+        try {
+          await AdMob.resumeBanner();
+          this.isBannerVisible = true;
+          console.log('[AdMob] Banner resumed successfully at BOTTOM_CENTER');
+          return;
+        } catch (resumeError) {
+          console.log('[AdMob] resumeBanner fallback, re-creating banner:', resumeError);
+        }
+      }
+
       const options: BannerAdOptions = {
         adId: this.getAdUnitId('banner'),
         adSize: BannerAdSize.ADAPTIVE_BANNER,
@@ -110,6 +129,7 @@ class AdMobService {
       };
 
       await AdMob.showBanner(options);
+      this.isBannerCreated = true;
       this.isBannerVisible = true;
       console.log('[AdMob] Google Test Banner shown at BOTTOM_CENTER');
     } catch (error) {
@@ -118,10 +138,11 @@ class AdMobService {
   }
 
   /**
-   * إخفاء إعلان البانر فوراً (ضروري جداً في شاشات القرآن، الأذكار، والأدعية).
+   * إخفاء إعلان البانر فوراً (مطلوب بدقة في شاشات القرآن، الأذكار، والأدعية).
    */
   public async hideBanner(): Promise<void> {
-    if (!Capacitor.isNativePlatform() || !this.isBannerVisible) return;
+    if (!Capacitor.isNativePlatform()) return;
+    if (!this.isBannerVisible && !this.isBannerCreated) return;
 
     try {
       await AdMob.hideBanner();
@@ -133,14 +154,16 @@ class AdMobService {
   }
 
   /**
-   * إزالة إعلان البانر بالكامل.
+   * إزالة إعلان البانر بالكامل من الشاشة وتدميره.
    */
   public async removeBanner(): Promise<void> {
     if (!Capacitor.isNativePlatform()) return;
 
     try {
       await AdMob.removeBanner();
+      this.isBannerCreated = false;
       this.isBannerVisible = false;
+      console.log('[AdMob] Banner removed');
     } catch (error) {
       console.warn('[AdMob] removeBanner error:', error);
     }
@@ -148,10 +171,10 @@ class AdMobService {
 
   /**
    * التحقق مما إذا كان مسموحاً بعرض البانر في التبويب الحالي:
-   * ممنوع منعاً باتاً في القرآن الكريم، الأذكار، والأدعية، وأثناء تشغيل الصوت.
+   * - ممنوع منعاً باتاً ومخفي بالكامل في: القرآن الكريم، الأذكار، الأدعية.
+   * - مسموح وظاهر في: المواقيت، الإعدادات.
    */
-  public isBannerAllowed(tab: string, isAudioPlaying = false): boolean {
-    if (isAudioPlaying) return false;
+  public isBannerAllowed(tab: string): boolean {
     if (tab === 'quran' || tab === 'azkar' || tab === 'duas') {
       return false;
     }
@@ -159,12 +182,16 @@ class AdMobService {
   }
 
   /**
-   * إدارة تلقائية لظهور الإعلانات حسب التبويب النشط:
-   * يعرض البانر في شاشات المواقيت والإعدادات، ويخفيه كلياً في شاشات القرآن والأذكار والأدعية.
+   * إدارة تلقائية لظهور البانر حسب التبويب النشط وحالة النوافذ المنبثقة:
+   * يعرض البانر في شاشات المواقيت والإعدادات، ويخفيه كلياً في القرآن والأذكار والأدعية.
    */
-  public handleTabChange(tab: string, isAudioPlaying = false): void {
-    const isAllowed = this.isBannerAllowed(tab, isAudioPlaying);
+  public handleTabChange(tab: string, modalOpen = false): void {
+    if (modalOpen) {
+      this.hideBanner();
+      return;
+    }
 
+    const isAllowed = this.isBannerAllowed(tab);
     if (isAllowed) {
       this.showBanner(BannerAdPosition.BOTTOM_CENTER);
     } else {
@@ -173,7 +200,7 @@ class AdMobService {
   }
 
   /**
-   * تم تعطيل Interstitial بالكامل حسب الطلب الحالي (استخدام Banner فقط).
+   * تم تعطيل Interstitial بالكامل في هذه المرحلة حسب التعليمات الصارمة.
    */
   public async showInterstitialIfAllowed(): Promise<boolean> {
     return false;

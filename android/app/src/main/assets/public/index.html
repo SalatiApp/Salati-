@@ -23,8 +23,32 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="./assets/index-CptE2_Eg.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BuUejrUa.css">
+    <script>
+      // Filter benign Vite HMR websocket errors caused by sandbox DISABLE_HMR=true
+      (function() {
+        var origErr = console.error;
+        console.error = function() {
+          var msg = '';
+          for (var i = 0; i < arguments.length; i++) {
+            var a = arguments[i];
+            msg += (typeof a === 'string' ? a : (a && (a.message || a.stack || String(a)))) + ' ';
+          }
+          if (
+            msg.indexOf('[vite]') !== -1 &&
+            (msg.indexOf("reading 'send'") !== -1 ||
+             msg.indexOf('failed to connect to websocket') !== -1 ||
+             msg.indexOf('WebSocket closed without opened') !== -1 ||
+             msg.indexOf('server connection lost') !== -1)
+          ) {
+            console.debug.apply(console, arguments);
+            return;
+          }
+          origErr.apply(console, arguments);
+        };
+      })();
+    </script>
+    <script type="module" crossorigin src="./assets/index-DmAsvqFA.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BuYFuOUd.css">
   <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
   <body class="bg-slate-50 text-slate-900 antialiased selection:bg-emerald-500 selection:text-white">
     <div id="root"></div>
