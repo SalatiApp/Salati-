@@ -6,6 +6,10 @@ import {
 import { Coordinates, PrayerTimes } from 'adhan';
 import { UserSettings } from '../types';
 import { getCalculationParameters } from './prayerCalculations';
+import { MORNING_AZKAR, EVENING_AZKAR } from '../data/azkar';
+
+export const NOTIFICATION_SMALL_ICON = 'ic_stat_salati';
+export const NOTIFICATION_ICON_COLOR = '#10b981';
 
 export const ADHAN_CHANNEL_ID = 'salati_adhan_channel';
 export const ADHAN_FAJR_CHANNEL_ID = 'salati_adhan_fajr_channel';
@@ -378,15 +382,21 @@ export async function scheduleAutomaticAzkarNotifications(
           morningTime.getTime() >
           now.getTime()
         ) {
+          const morningZikr =
+            MORNING_AZKAR[dayOffset % MORNING_AZKAR.length];
+
           notificationsToSchedule.push({
             id:
               MORNING_AZKAR_START_ID +
               dayOffset,
 
-            title: 'أذكار الصباح',
+            title: '🌿 أذكار الصباح',
 
-            body:
-              'حان وقت أذكار الصباح 🌅',
+            body: morningZikr.text,
+
+            largeBody: morningZikr.text,
+
+            summaryText: morningZikr.virtue || 'أذكار الصباح',
 
             schedule: {
               at: morningTime,
@@ -396,7 +406,9 @@ export async function scheduleAutomaticAzkarNotifications(
             channelId:
               AZKAR_CHANNEL_ID,
 
-            smallIcon: 'ic_launcher',
+            smallIcon: NOTIFICATION_SMALL_ICON,
+
+            iconColor: NOTIFICATION_ICON_COLOR,
 
             autoCancel: true,
           });
@@ -421,15 +433,21 @@ export async function scheduleAutomaticAzkarNotifications(
           eveningTime.getTime() >
           now.getTime()
         ) {
+          const eveningZikr =
+            EVENING_AZKAR[dayOffset % EVENING_AZKAR.length];
+
           notificationsToSchedule.push({
             id:
               EVENING_AZKAR_START_ID +
               dayOffset,
 
-            title: 'أذكار المساء',
+            title: '🌙 أذكار المساء',
 
-            body:
-              'حان وقت أذكار المساء 🌙',
+            body: eveningZikr.text,
+
+            largeBody: eveningZikr.text,
+
+            summaryText: eveningZikr.virtue || 'أذكار المساء',
 
             schedule: {
               at: eveningTime,
@@ -439,7 +457,9 @@ export async function scheduleAutomaticAzkarNotifications(
             channelId:
               AZKAR_CHANNEL_ID,
 
-            smallIcon: 'ic_launcher',
+            smallIcon: NOTIFICATION_SMALL_ICON,
+
+            iconColor: NOTIFICATION_ICON_COLOR,
 
             autoCancel: true,
           });
@@ -602,12 +622,15 @@ export async function scheduleAutomaticAdhanAlarms(
             id: preNotificationId,
             title: `اقتراب موعد الصلاة`,
             body: `الصلاة القادمة: ${prayer.nameAr} — بعد 5 دقائق`,
+            largeBody: `حان وقت الاستعداد لصلاة ${prayer.nameAr}، تفصلنا عنها 5 دقائق بإذن الله.`,
+            summaryText: `تنبيه مسبق`,
             schedule: {
               at: prePrayerTime,
               allowWhileIdle: true,
             },
             channelId: PRE_PRAYER_CHANNEL_ID,
-            smallIcon: 'ic_launcher',
+            smallIcon: NOTIFICATION_SMALL_ICON,
+            iconColor: NOTIFICATION_ICON_COLOR,
             autoCancel: true,
           });
         }
@@ -641,6 +664,11 @@ export async function scheduleAutomaticAdhanAlarms(
             body:
               `الله أكبر - حان وقت صلاة ${prayer.nameAr} (${timeFormatted})`,
 
+            largeBody:
+              `الله أكبر، الله أكبر. حان الآن موعد أذان صلاة ${prayer.nameAr} (${timeFormatted}). تقبل الله طاعتكم.`,
+
+            summaryText: `صلاة ${prayer.nameAr}`,
+
             schedule: {
               at: prayerTime,
               allowWhileIdle: true,
@@ -653,7 +681,9 @@ export async function scheduleAutomaticAdhanAlarms(
 
             sound: 'adhan.mp3',
 
-            smallIcon: 'ic_launcher',
+            smallIcon: NOTIFICATION_SMALL_ICON,
+
+            iconColor: NOTIFICATION_ICON_COLOR,
 
             autoCancel: true,
           });
@@ -683,4 +713,100 @@ export async function scheduleAutomaticAdhanAlarms(
 
     return 0;
   }
+}
+
+/**
+ * Utility function to test notifications with exact payload, authentic Azkar text, and correct icon
+ */
+export async function sendTestNotification(
+  type: 'prayer' | 'pre_prayer' | 'morning_azkar' | 'evening_azkar'
+): Promise<{ success: boolean; title: string; body: string }> {
+  let title = '';
+  let body = '';
+  let largeBody = '';
+  let summaryText = '';
+  let channelId = AZKAR_CHANNEL_ID;
+  let sound: string | undefined = undefined;
+
+  if (type === 'morning_azkar') {
+    const zikr = MORNING_AZKAR[0];
+    title = '🌿 أذكار الصباح';
+    body = zikr.text;
+    largeBody = zikr.text;
+    summaryText = zikr.virtue || 'أذكار الصباح';
+    channelId = AZKAR_CHANNEL_ID;
+  } else if (type === 'evening_azkar') {
+    const zikr = EVENING_AZKAR[0];
+    title = '🌙 أذكار المساء';
+    body = zikr.text;
+    largeBody = zikr.text;
+    summaryText = zikr.virtue || 'أذكار المساء';
+    channelId = AZKAR_CHANNEL_ID;
+  } else if (type === 'pre_prayer') {
+    title = 'اقتراب موعد الصلاة';
+    body = 'الصلاة القادمة: الظهر — بعد 5 دقائق';
+    largeBody = 'حان وقت الاستعداد لصلاة الظهر، تفصلنا عنها 5 دقائق بإذن الله.';
+    summaryText = 'تنبيه مسبق';
+    channelId = PRE_PRAYER_CHANNEL_ID;
+  } else {
+    title = 'حان الآن موعد أذان الظهر';
+    body = 'الله أكبر - حان وقت صلاة الظهر (12:30)';
+    largeBody = 'الله أكبر، الله أكبر. حان الآن موعد أذان الظهر حسب توقيت مدينتك (12:30). تقبل الله طاعتكم.';
+    summaryText = 'صلاة الظهر';
+    channelId = ADHAN_CHANNEL_ID;
+    sound = 'adhan.mp3';
+  }
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const testId =
+        99000 +
+        (type === 'morning_azkar'
+          ? 1
+          : type === 'evening_azkar'
+          ? 2
+          : type === 'pre_prayer'
+          ? 3
+          : 4);
+
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: testId,
+            title,
+            body,
+            largeBody,
+            summaryText,
+            channelId,
+            sound,
+            smallIcon: NOTIFICATION_SMALL_ICON,
+            iconColor: NOTIFICATION_ICON_COLOR,
+            autoCancel: true,
+          },
+        ],
+      });
+      return { success: true, title, body };
+    } catch (e) {
+      console.warn('Failed to schedule native test notification:', e);
+      return { success: false, title, body };
+    }
+  } else if (
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    Notification.permission === 'granted'
+  ) {
+    new Notification(title, {
+      body,
+      icon: '/pwa-192x192.png',
+      tag: `test-${type}`,
+    });
+    return { success: true, title, body };
+  }
+
+  return { success: true, title, body };
+}
+
+// Expose globally for instant testing / verification
+if (typeof window !== 'undefined') {
+  (window as unknown as { __testSalatiNotification?: typeof sendTestNotification }).__testSalatiNotification = sendTestNotification;
 }

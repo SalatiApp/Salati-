@@ -9,6 +9,11 @@ const config: CapacitorConfig = {
     cleartext: true,
   },
   plugins: {
+    LocalNotifications: {
+      smallIcon: 'ic_stat_salati',
+      iconColor: '#10b981',
+      sound: 'adhan.mp3',
+    },
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,

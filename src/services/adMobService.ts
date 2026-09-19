@@ -74,9 +74,6 @@ class AdMobService {
 
       this.isInitialized = true;
       console.log('[AdMob] Google AdMob SDK initialized successfully');
-
-      // تجهيز إعلان Interstitial في الخلفية ليصبح جاهزاً إذا دعت الحاجة
-      this.preloadInterstitial();
     } catch (error) {
       console.warn('[AdMob] Initialization failed or delayed:', error);
     }
@@ -94,10 +91,14 @@ class AdMobService {
   }
 
   /**
-   * إظهار إعلان بانر (Banner Ad) في موضع مناسب دون تغطية المحتوى.
+   * إظهار إعلان بانر (Banner Ad) في أسفل الشاشة مباشرة أسفل شريط التنقل.
    */
   public async showBanner(position: BannerAdPosition = BannerAdPosition.BOTTOM_CENTER): Promise<void> {
-    if (!Capacitor.isNativePlatform() || !this.isInitialized) return;
+    if (!Capacitor.isNativePlatform()) return;
+
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
 
     try {
       const options: BannerAdOptions = {
@@ -110,6 +111,7 @@ class AdMobService {
 
       await AdMob.showBanner(options);
       this.isBannerVisible = true;
+      console.log('[AdMob] Google Test Banner shown at BOTTOM_CENTER');
     } catch (error) {
       console.warn('[AdMob] showBanner error:', error);
     }
@@ -124,6 +126,7 @@ class AdMobService {
     try {
       await AdMob.hideBanner();
       this.isBannerVisible = false;
+      console.log('[AdMob] Banner hidden');
     } catch (error) {
       console.warn('[AdMob] hideBanner error:', error);
     }
@@ -144,80 +147,36 @@ class AdMobService {
   }
 
   /**
-   * تحميل مسبق لإعلان Interstitial في الخلفية.
+   * التحقق مما إذا كان مسموحاً بعرض البانر في التبويب الحالي:
+   * ممنوع منعاً باتاً في القرآن الكريم، الأذكار، والأدعية، وأثناء تشغيل الصوت.
    */
-  public async preloadInterstitial(): Promise<void> {
-    if (!Capacitor.isNativePlatform() || !this.isInitialized || this.isInterstitialLoading) return;
-
-    try {
-      this.isInterstitialLoading = true;
-      const options: AdOptions = {
-        adId: this.getAdUnitId('interstitial'),
-        isTesting: ADMOB_CONFIG.isTesting,
-      };
-      await AdMob.prepareInterstitial(options);
-    } catch (error) {
-      console.warn('[AdMob] prepareInterstitial error:', error);
-    } finally {
-      this.isInterstitialLoading = false;
-    }
-  }
-
-  /**
-   * عرض إعلان بيني (Interstitial) مع مراعاة الضوابط الدقيقة:
-   * 1. منع العرض إذا لم يمر وقت كافٍ (Cooldown).
-   * 2. منع العرض أثناء تشغيل الأذان أو التلاوة.
-   * 3. منع العرض داخل صفحات القرآن أو الأذكار.
-   */
-  public async showInterstitialIfAllowed(options?: {
-    currentTab?: string;
-    isAudioPlaying?: boolean;
-    force?: boolean;
-  }): Promise<boolean> {
-    if (!Capacitor.isNativePlatform() || !this.isInitialized) return false;
-
-    // ضوابط احترام المستخدم والمحتوى القرآني:
-    if (options?.isAudioPlaying) {
-      // لا يظهر الإعلان إطلاقاً أثناء الأذان أو تشغيل تلاوة القرآن
+  public isBannerAllowed(tab: string, isAudioPlaying = false): boolean {
+    if (isAudioPlaying) return false;
+    if (tab === 'quran' || tab === 'azkar' || tab === 'duas') {
       return false;
     }
-
-    if (options?.currentTab === 'quran' || options?.currentTab === 'azkar' || options?.currentTab === 'duas') {
-      // لا يظهر الإعلان إطلاقاً داخل شاشات التعبد والقراءة
-      return false;
-    }
-
-    const now = Date.now();
-    if (!options?.force && now - this.lastInterstitialTime < INTERSTITIAL_COOLDOWN_MS) {
-      // لم يمر وقت كافٍ (10 دقائق) منذ آخر إعلان
-      return false;
-    }
-
-    try {
-      await AdMob.showInterstitial();
-      this.lastInterstitialTime = Date.now();
-      // تحميل مسبق للإعلان التالي بعد إغلاق الحالي
-      setTimeout(() => this.preloadInterstitial(), 3000);
-      return true;
-    } catch (error) {
-      console.warn('[AdMob] showInterstitial error:', error);
-      // محاولة إعادة التحميل للمرة القادمة
-      this.preloadInterstitial();
-      return false;
-    }
+    return tab === 'prayers' || tab === 'settings';
   }
 
   /**
    * إدارة تلقائية لظهور الإعلانات حسب التبويب النشط:
-   * تضمن إخفاء البانر كلياً في شاشات القرآن والأذكار والأدعية وأثناء الصوت.
+   * يعرض البانر في شاشات المواقيت والإعدادات، ويخفيه كلياً في شاشات القرآن والأذكار والأدعية.
    */
-  public handleTabChange(tab: string, isAudioPlaying: boolean): void {
-    if (!Capacitor.isNativePlatform()) return;
+  public handleTabChange(tab: string, isAudioPlaying = false): void {
+    const isAllowed = this.isBannerAllowed(tab, isAudioPlaying);
 
-    // إخفاء فوري ومطلق في أقسام القرآن، الأذكار، الأدعية، أو أثناء تشغيل الصوت
-    if (tab === 'quran' || tab === 'azkar' || tab === 'duas' || isAudioPlaying) {
+    if (isAllowed) {
+      this.showBanner(BannerAdPosition.BOTTOM_CENTER);
+    } else {
       this.hideBanner();
     }
+  }
+
+  /**
+   * تم تعطيل Interstitial بالكامل حسب الطلب الحالي (استخدام Banner فقط).
+   */
+  public async showInterstitialIfAllowed(): Promise<boolean> {
+    return false;
   }
 }
 

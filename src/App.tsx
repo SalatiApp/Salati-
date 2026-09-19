@@ -110,6 +110,8 @@ export default function App() {
   // Google AdMob Initialization & Tab Tracking (Native Android)
   // ---------------------------------------------------------
 
+  const showAdBanner = adMobService.isBannerAllowed(currentTab, isMuted);
+
   useEffect(() => {
     adMobService.initialize();
   }, []);
