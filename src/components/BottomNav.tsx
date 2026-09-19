@@ -37,8 +37,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       id="app-bottom-navigation"
       className="fixed bottom-0 left-0 right-0 z-30 flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-emerald-100/90 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]"
     >
-      {/* 1. شريط التنقل السفلي */}
-      <div className="w-full max-w-xl mx-auto flex items-center justify-around px-1.5 py-1">
+      {/* 1. شريط التنقل السفلي - مرفوع قليلاً مع مساحة مريحة للأيقونات */}
+      <div className="w-full max-w-xl mx-auto flex items-center justify-around px-2 pt-2 pb-1.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
@@ -46,7 +46,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <button
               key={item.id}
               onClick={() => handleTabSelect(item.id)}
-              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-2xl transition-all duration-200 relative min-h-[54px] active:scale-95 ${
+              className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-2xl transition-all duration-200 relative min-h-[58px] active:scale-95 ${
                 isActive
                   ? 'text-emerald-700 dark:text-emerald-400 font-bold'
                   : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium'
@@ -64,13 +64,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               >
                 <Icon className="w-5.5 h-5.5 sm:w-6 sm:h-6 stroke-[2.1]" />
               </div>
-              <span className="text-[11px] mt-0.5 tracking-tight font-tajawal font-medium">{item.labelAr}</span>
+              <span className="text-[11px] mt-1 tracking-tight font-tajawal font-medium leading-none">{item.labelAr}</span>
             </button>
           );
         })}
       </div>
 
-      {/* 2. Banner AdMob محجوز ومحدد مباشرة تحت شريط التنقل */}
+      {/* فاصل مرئي وفراغ واضح ومريح بين شريط التنقل والإعلان */}
+      {showAdBanner && (
+        <div className="w-full h-2.5 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800/60 transition-all duration-200" />
+      )}
+
+      {/* 2. Banner AdMob محجوز ومحدد مباشرة تحت شريط التنقل والفاصل */}
       {showAdBanner ? (
         <div
           id="admob-banner-container"
@@ -85,7 +90,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           </div>
         </div>
       ) : (
-        <div className="pb-[env(safe-area-inset-bottom,0.5rem)]" />
+        <div className="pb-[env(safe-area-inset-bottom,0.75rem)]" />
       )}
     </nav>
   );
