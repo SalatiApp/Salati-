@@ -77,7 +77,15 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [now, setNow] = useState<Date>(new Date());
 
-  const lastAlertMinuteRef = useRef<string>('');
+  const lastAlertMinuteRef = useRef<string>(
+    (() => {
+      try {
+        return sessionStorage.getItem('salati_last_adhan_minute') || '';
+      } catch {
+        return '';
+      }
+    })()
+  );
   const lastPreAlertMinuteRef = useRef<string>('');
 
   // ---------------------------------------------------------
@@ -341,6 +349,9 @@ export default function App() {
 
       prayerTriggered = true;
       lastAlertMinuteRef.current = currentMinuteKey;
+      try {
+        sessionStorage.setItem('salati_last_adhan_minute', currentMinuteKey);
+      } catch {}
 
       if (settings.adhanType === 'silent') {
         return;
@@ -350,10 +361,12 @@ export default function App() {
         return;
       }
 
-      try {
-        soundManager.playAdhan(settings.adhanType, prayer.id);
-      } catch {
-        // Ignore sound errors.
+      if (!soundManager.isPlaying()) {
+        try {
+          soundManager.playAdhan(settings.adhanType, prayer.id);
+        } catch {
+          // Ignore sound errors.
+        }
       }
 
       try {

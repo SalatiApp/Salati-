@@ -8,6 +8,7 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -19,6 +20,24 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         createAdhanNotificationChannel();
         createAzkarNotificationChannel();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // When the notification shade or quick settings are pulled down,
+        // Android pauses the Activity, which in turn pauses the WebView and its audio.
+        // We ensure the WebView timers and media playback resume immediately so Adhan audio continues.
+        if (bridge != null && bridge.getWebView() != null) {
+            WebView webView = bridge.getWebView();
+            webView.post(() -> {
+                try {
+                    webView.resumeTimers();
+                    webView.onResume();
+                } catch (Exception ignored) {
+                }
+            });
+        }
     }
 
     private void createAdhanNotificationChannel() {
