@@ -361,13 +361,15 @@ export default function App() {
         return;
       }
 
-      if (!soundManager.isPlaying()) {
-        try {
-          soundManager.playAdhan(settings.adhanType, prayer.id);
-        } catch {
-          // Ignore sound errors.
+      soundManager.isAdhanPlayingAsync().then((isAlreadyPlaying) => {
+        if (!isAlreadyPlaying && !soundManager.isPlaying()) {
+          try {
+            soundManager.playAdhan(settings.adhanType, prayer.id, prayer.nameAr);
+          } catch {
+            // Ignore sound errors.
+          }
         }
-      }
+      });
 
       try {
         sendPrayerNotification(

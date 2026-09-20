@@ -38,6 +38,20 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-4276933033638806~5856813907"/>
+
+        <!-- Native Adhan Alarm and Notification Receivers -->
+        <receiver
+            android:name=".AdhanAlarmReceiver"
+            android:exported="false">
+        </receiver>
+
+        <receiver
+            android:name=".AdhanStopReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.salati.app.ACTION_STOP_ADHAN" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <!-- Permissions for Prayer Times, Adhan & Qibla -->

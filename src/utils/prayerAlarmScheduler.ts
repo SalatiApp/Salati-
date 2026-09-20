@@ -7,12 +7,13 @@ import { Coordinates, PrayerTimes } from 'adhan';
 import { UserSettings } from '../types';
 import { getCalculationParameters } from './prayerCalculations';
 import { MORNING_AZKAR, EVENING_AZKAR } from '../data/azkar';
+import { AdhanNative } from './nativeAdhan';
 
 export const NOTIFICATION_SMALL_ICON = 'ic_stat_salati';
 export const NOTIFICATION_ICON_COLOR = '#10b981';
 
-export const ADHAN_CHANNEL_ID = 'salati_adhan_channel';
-export const ADHAN_FAJR_CHANNEL_ID = 'salati_adhan_fajr_channel';
+export const ADHAN_CHANNEL_ID = 'salati_adhan_channel_v2';
+export const ADHAN_FAJR_CHANNEL_ID = 'salati_adhan_fajr_channel_v2';
 export const PRE_PRAYER_CHANNEL_ID = 'salati_pre_prayer_channel';
 export const AZKAR_CHANNEL_ID = 'salati_azkar_channel';
 
@@ -33,26 +34,26 @@ export async function initPrayerAlarmChannel(): Promise<void> {
 
   try {
     // Normal prayer adhan channel (Dhuhr, Asr, Maghrib, Isha)
+    // Sound is handled natively via MediaPlayer with USAGE_ALARM to ensure it continues playing
+    // through fingerprint unlock, quick settings, and screen interactions without interruption.
     await LocalNotifications.createChannel({
       id: ADHAN_CHANNEL_ID,
       name: 'أذان الصلاة',
       description: 'تنبيهات مواقيت الصلاة مع صوت الأذان',
       importance: 5,
       visibility: 1,
-      sound: 'adhan.mp3',
       vibration: true,
       lights: true,
       lightColor: '#059669',
     });
 
-    // Fajr adhan channel (uses the same adhan.mp3)
+    // Fajr adhan channel
     await LocalNotifications.createChannel({
       id: ADHAN_FAJR_CHANNEL_ID,
       name: 'أذان الفجر',
       description: 'تنبيهات صلاة الفجر مع صوت الأذان',
       importance: 5,
       visibility: 1,
-      sound: 'adhan.mp3',
       vibration: true,
       lights: true,
       lightColor: '#059669',
@@ -263,6 +264,10 @@ async function cancelPrayerNotifications(): Promise<void> {
       await LocalNotifications.cancel({
         notifications: prayerNotifications,
       });
+    }
+
+    if (Capacitor.isNativePlatform()) {
+      await AdhanNative.cancelAllAlarms().catch(() => {});
     }
   } catch (err) {
     console.warn(
@@ -540,6 +545,12 @@ export async function scheduleAutomaticAdhanAlarms(
 
     const notificationsToSchedule: LocalNotificationSchema[] =
       [];
+    const nativePrayersToSchedule: Array<{
+      id: number;
+      nameAr: string;
+      time: number;
+      adhanType?: string;
+    }> = [];
 
     const DAYS_TO_SCHEDULE = 7;
 
@@ -635,7 +646,7 @@ export async function scheduleAutomaticAdhanAlarms(
           });
         }
 
-        // 2. Schedule Adhan notification at exact prayer time
+        // 2. Schedule Adhan notification and exact native alarm at prayer time
         if (
           prayerTime.getTime() >
           now.getTime()
@@ -655,6 +666,15 @@ export async function scheduleAutomaticAdhanAlarms(
               }
             );
 
+          // Add to native AlarmManager schedule for uninterrupted playback
+          nativePrayersToSchedule.push({
+            id: notificationId,
+            nameAr: prayer.nameAr,
+            time: prayerTime.getTime(),
+            adhanType: settings.adhanType,
+          });
+
+          // Add visual notification (sound is handled by native MediaPlayer with USAGE_ALARM)
           notificationsToSchedule.push({
             id: notificationId,
 
@@ -679,8 +699,6 @@ export async function scheduleAutomaticAdhanAlarms(
                 ? ADHAN_FAJR_CHANNEL_ID
                 : ADHAN_CHANNEL_ID,
 
-            sound: 'adhan.mp3',
-
             smallIcon: NOTIFICATION_SMALL_ICON,
 
             iconColor: NOTIFICATION_ICON_COLOR,
@@ -700,8 +718,21 @@ export async function scheduleAutomaticAdhanAlarms(
       });
 
       console.log(
-        `Successfully scheduled ${notificationsToSchedule.length} automatic Adhan alarms.`
+        `Successfully scheduled ${notificationsToSchedule.length} automatic visual Adhan notifications.`
       );
+    }
+
+    if (Capacitor.isNativePlatform() && nativePrayersToSchedule.length > 0) {
+      try {
+        await AdhanNative.schedulePrayerAlarms({
+          prayers: nativePrayersToSchedule,
+        });
+        console.log(
+          `Successfully scheduled ${nativePrayersToSchedule.length} native exact Adhan alarms.`
+        );
+      } catch (nativeErr) {
+        console.warn('Failed to schedule native exact Adhan alarms:', nativeErr);
+      }
     }
 
     return notificationsToSchedule.length;

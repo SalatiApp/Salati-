@@ -12,11 +12,12 @@ import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-    public static final String ADHAN_CHANNEL_ID = "salati_adhan_channel";
+    public static final String ADHAN_CHANNEL_ID = "salati_adhan_channel_v2";
     public static final String AZKAR_CHANNEL_ID = "salati_azkar_channel";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(AdhanPlugin.class);
         super.onCreate(savedInstanceState);
         createAdhanNotificationChannel();
         createAzkarNotificationChannel();
@@ -52,14 +53,11 @@ public class MainActivity extends BridgeActivity {
                 channel.setDescription("تنبيهات مواقيت الصلاة مع صوت الأذان");
                 channel.enableVibration(true);
                 channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+                // Sound is played natively by AdhanAudioPlayer using MediaPlayer with USAGE_ALARM.
+                // Setting notification sound to null prevents Android's NotificationPlayer from playing
+                // a notification chime that gets cancelled on fingerprint unlock or notification shade interaction.
+                channel.setSound(null, null);
 
-                Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/raw/adhan");
-                AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .build();
-
-                channel.setSound(soundUri, audioAttributes);
                 manager.createNotificationChannel(channel);
             }
         }
