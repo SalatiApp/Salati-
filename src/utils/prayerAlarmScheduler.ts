@@ -5,7 +5,7 @@ import {
 } from '@capacitor/local-notifications';
 import { Coordinates, PrayerTimes } from 'adhan';
 import { UserSettings } from '../types';
-import { getCalculationParameters } from './prayerCalculations';
+import { getCalculationParameters, getCalendarDateInTimezone } from './prayerCalculations';
 import { MORNING_AZKAR, EVENING_AZKAR } from '../data/azkar';
 import { AdhanNative } from './nativeAdhan';
 
@@ -499,7 +499,8 @@ export async function scheduleAutomaticAzkarNotifications(
 export async function scheduleAutomaticAdhanAlarms(
   latitude: number,
   longitude: number,
-  settings: UserSettings
+  settings: UserSettings,
+  timeZone: string = 'Africa/Casablanca'
 ): Promise<number> {
   if (!Capacitor.isNativePlatform()) {
     return 0;
@@ -542,6 +543,8 @@ export async function scheduleAutomaticAdhanAlarms(
       );
 
     const now = new Date();
+    const effectiveTimeZone = timeZone || 'Africa/Casablanca';
+    const baseCalendarDate = getCalendarDateInTimezone(now, effectiveTimeZone);
 
     const notificationsToSchedule: LocalNotificationSchema[] =
       [];
@@ -559,10 +562,10 @@ export async function scheduleAutomaticAdhanAlarms(
       dayOffset < DAYS_TO_SCHEDULE;
       dayOffset++
     ) {
-      const targetDate = new Date();
+      const targetDate = new Date(baseCalendarDate);
 
       targetDate.setDate(
-        now.getDate() + dayOffset
+        baseCalendarDate.getDate() + dayOffset
       );
 
       const prayerTimes =
@@ -663,6 +666,7 @@ export async function scheduleAutomaticAdhanAlarms(
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false,
+                timeZone: effectiveTimeZone,
               }
             );
 

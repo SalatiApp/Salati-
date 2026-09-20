@@ -44,11 +44,30 @@ export function getCalculationParameters(methodKey: CalculationMethodKey, madhab
   return params;
 }
 
+export function getCalendarDateInTimezone(
+  date: Date = new Date(),
+  timeZone: string = 'Africa/Casablanca'
+): Date {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timeZone || 'Africa/Casablanca',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  });
+  const parts = formatter.formatToParts(date);
+  const year = parseInt(parts.find((p) => p.type === 'year')!.value, 10);
+  const month = parseInt(parts.find((p) => p.type === 'month')!.value, 10) - 1;
+  const day = parseInt(parts.find((p) => p.type === 'day')!.value, 10);
+
+  return new Date(year, month, day, 12, 0, 0);
+}
+
 export function calculateDailyPrayers(
   lat: number,
   lng: number,
   date: Date,
-  settings: UserSettings
+  settings: UserSettings,
+  timeZone: string = 'Africa/Casablanca'
 ): {
   prayers: PrayerTimeItem[];
   nextPrayerItem: PrayerTimeItem | null;
@@ -57,18 +76,20 @@ export function calculateDailyPrayers(
   progressPercent: number;
   prayerTimesRaw: PrayerTimes;
 } {
+  const targetDate = getCalendarDateInTimezone(date, timeZone);
   const coordinates = new Coordinates(lat, lng);
   const params = getCalculationParameters(settings.calculationMethod, settings.madhab);
-  const prayerTimes = new PrayerTimes(coordinates, date, params);
+  const prayerTimes = new PrayerTimes(coordinates, targetDate, params);
 
   const now = new Date();
 
-  // عرض مواقيت الصلاة دائماً بنظام 24 ساعة وبالأرقام الغربية
+  // عرض مواقيت الصلاة دائماً بنظام 24 ساعة وبالأرقام الغربية وفق التوقيت الرسمي للمدينة (Africa/Casablanca افتراضياً للمغرب)
   const formatTime = (d: Date) => {
     return d.toLocaleTimeString('ar-EG-u-nu-latn', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
+      timeZone: timeZone || 'Africa/Casablanca',
     });
   };
 
@@ -133,7 +154,7 @@ export function calculateDailyPrayers(
   let progressPercent = 0;
 
   if (nextIdx === -1) {
-    const tomorrow = new Date(date);
+    const tomorrow = new Date(targetDate);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const tomorrowPrayers = new PrayerTimes(
@@ -288,7 +309,8 @@ export function formatSecondsToCountdown(
 }
 
 export function getFormattedHijriDate(
-  date: Date = new Date()
+  date: Date = new Date(),
+  timeZone: string = 'Africa/Casablanca'
 ): string {
   try {
     const formatter = new Intl.DateTimeFormat(
@@ -297,6 +319,7 @@ export function getFormattedHijriDate(
         day: 'numeric',
         month: 'long',
         year: 'numeric',
+        timeZone: timeZone || 'Africa/Casablanca',
       }
     );
 
@@ -307,7 +330,8 @@ export function getFormattedHijriDate(
 }
 
 export function getFormattedGregorianDate(
-  date: Date = new Date()
+  date: Date = new Date(),
+  timeZone: string = 'Africa/Casablanca'
 ): string {
   return new Intl.DateTimeFormat(
     'ar-EG-u-nu-latn',
@@ -316,6 +340,7 @@ export function getFormattedGregorianDate(
       day: 'numeric',
       month: 'long',
       year: 'numeric',
+      timeZone: timeZone || 'Africa/Casablanca',
     }
   ).format(date);
 }

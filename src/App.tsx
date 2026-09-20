@@ -170,7 +170,12 @@ export default function App() {
         latitude: settings.customCoordinates.latitude,
         longitude: settings.customCoordinates.longitude,
         timezone:
-          Intl.DateTimeFormat().resolvedOptions().timeZone,
+          (settings.customCoordinates.latitude >= 20.0 &&
+           settings.customCoordinates.latitude <= 36.5 &&
+           settings.customCoordinates.longitude >= -18.0 &&
+           settings.customCoordinates.longitude <= -1.0)
+            ? 'Africa/Casablanca'
+            : (Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Casablanca'),
         defaultMethod: settings.calculationMethod,
       };
     }
@@ -248,7 +253,8 @@ export default function App() {
       currentCity.latitude,
       currentCity.longitude,
       now,
-      settings
+      settings,
+      currentCity.timezone || 'Africa/Casablanca'
     );
   }, [currentCity, now, settings]);
 
@@ -260,11 +266,13 @@ export default function App() {
     scheduleAutomaticAdhanAlarms(
       currentCity.latitude,
       currentCity.longitude,
-      settings
+      settings,
+      currentCity.timezone || 'Africa/Casablanca'
     );
   }, [
     currentCity.latitude,
     currentCity.longitude,
+    currentCity.timezone,
     settings.calculationMethod,
     settings.madhab,
     settings.adhanType,
@@ -279,7 +287,16 @@ export default function App() {
   // ---------------------------------------------------------
 
   useEffect(() => {
-    const currentMinuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
+    const tz = currentCity.timezone || 'Africa/Casablanca';
+    const currentMinuteKey = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(now);
 
     // 1. Check 5-minute pre-prayer notification
     if (lastPreAlertMinuteRef.current !== currentMinuteKey) {
@@ -295,11 +312,16 @@ export default function App() {
         }
 
         const prePrayerMs = prayer.time.getTime() - 5 * 60 * 1000;
-        const preDate = new Date(prePrayerMs);
-
         const isPreMinute =
-          preDate.getHours() === now.getHours() &&
-          preDate.getMinutes() === now.getMinutes();
+          new Intl.DateTimeFormat('en-GB', {
+            timeZone: tz,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          }).format(new Date(prePrayerMs)) === currentMinuteKey;
 
         if (isPreMinute) {
           lastPreAlertMinuteRef.current = currentMinuteKey;
@@ -333,11 +355,16 @@ export default function App() {
         return;
       }
 
-      const pTime = prayer.time;
-
       const sameMinute =
-        pTime.getHours() === now.getHours() &&
-        pTime.getMinutes() === now.getMinutes();
+        new Intl.DateTimeFormat('en-GB', {
+          timeZone: tz,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }).format(prayer.time) === currentMinuteKey;
 
       if (!sameMinute) {
         return;

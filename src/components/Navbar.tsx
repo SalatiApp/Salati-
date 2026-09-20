@@ -18,12 +18,14 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  currentCity,
   isMuted = false,
   onToggleMute,
   onInstallClick,
 }) => {
-  const hijriDate = getFormattedHijriDate();
-  const gregorianDate = getFormattedGregorianDate();
+  const tz = currentCity?.timezone || 'Africa/Casablanca';
+  const hijriDate = getFormattedHijriDate(new Date(), tz);
+  const gregorianDate = getFormattedGregorianDate(new Date(), tz);
   const { isInstallable, isInstalled, install } = usePWAInstall();
 
   const handleInstall = async () => {

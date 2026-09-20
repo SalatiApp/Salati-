@@ -203,7 +203,8 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
         await scheduleAutomaticAdhanAlarms(
           cityLat,
           cityLng,
-          settings
+          settings,
+          currentCity?.timezone || 'Africa/Casablanca'
         );
       }
 
