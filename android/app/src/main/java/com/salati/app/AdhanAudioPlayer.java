@@ -12,6 +12,8 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
@@ -19,17 +21,19 @@ import androidx.core.app.NotificationCompat;
 /**
  * Singleton native Android audio player for Adhan.
  * Uses MediaPlayer with USAGE_ALARM to ensure:
- * 1. Playback continues when phone is unlocked (e.g. with fingerprint).
- * 2. Playback continues when Notification Shade / Quick Settings are pulled down.
- * 3. Playback is NOT cancelled by Android's NotificationManager upon user interaction.
- * 4. Ignores transient audio focus loss (such as fingerprint click or haptic sounds).
- * 5. Exactly one Adhan audio playback at any time (no duplicate playback).
+ * 1. Playback continues uninterrupted when phone is moved, tilted, or shaken.
+ * 2. Playback is NOT cancelled by Android motion gestures, shake-to-silence, or AudioFocus changes.
+ * 3. Playback continues when phone is unlocked (e.g. with fingerprint) or screen turns on.
+ * 4. Playback continues when Notification Shade / Quick Settings are pulled down.
+ * 5. Exactly ONE Adhan audio playback at any time (no duplicate playback, no restarting from 0:00).
+ * 6. Playback stops ONLY when the user explicitly taps "إيقاف الأذان" in the notification, or upon natural completion.
  */
 public class AdhanAudioPlayer {
     private static final String TAG = "AdhanAudioPlayer";
     public static final String ACTION_STOP_ADHAN = "com.salati.app.ACTION_STOP_ADHAN";
     public static final String ADHAN_ACTIVE_CHANNEL_ID = "salati_adhan_active_channel_v2";
     private static final int NOTIFICATION_ID = 8888;
+    private static final long COOLDOWN_MS = 180 * 1000L; // 3 minutes cooldown for the same prayer
 
     private static AdhanAudioPlayer instance;
 
@@ -37,8 +41,13 @@ public class AdhanAudioPlayer {
     private PowerManager.WakeLock wakeLock;
     private AudioManager audioManager;
     private AudioFocusRequest audioFocusRequest;
-    private boolean isPlaying = false;
+    private volatile boolean isPlaying = false;
+    private volatile boolean isPreparing = false;
+    private long lastPlayStartTimeMs = 0;
     private String currentPrayerName = "";
+
+    private final Handler watchdogHandler = new Handler(Looper.getMainLooper());
+    private Runnable watchdogRunnable;
 
     private AdhanAudioPlayer() {}
 
@@ -50,7 +59,14 @@ public class AdhanAudioPlayer {
     }
 
     public synchronized boolean isAdhanPlaying() {
-        return isPlaying && mediaPlayer != null && mediaPlayer.isPlaying();
+        if (isPreparing || isPlaying) {
+            return true;
+        }
+        try {
+            return mediaPlayer != null && mediaPlayer.isPlaying();
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     public synchronized String getCurrentPrayerName() {
@@ -63,24 +79,35 @@ public class AdhanAudioPlayer {
             return;
         }
 
-        // If already playing, do NOT restart from the beginning. Keep the current playback running.
+        long now = System.currentTimeMillis();
+        String effectivePrayerName = (prayerName != null && !prayerName.trim().isEmpty()) ? prayerName : "الصلاة";
+
+        // If already playing or preparing, do NOT restart from the beginning. Keep the current playback running.
         if (isAdhanPlaying()) {
             Log.d(TAG, "Adhan is already actively playing for " + currentPrayerName + ", ignoring redundant play call.");
+            return;
+        }
+
+        // Prevent repeat triggers for the same prayer within cooldown window
+        if (now - lastPlayStartTimeMs < COOLDOWN_MS && effectivePrayerName.equals(currentPrayerName)) {
+            Log.d(TAG, "Adhan for " + effectivePrayerName + " was started within the last 3 minutes, ignoring repeat call.");
             return;
         }
 
         stopPlaybackInternal(context);
 
         try {
-            currentPrayerName = (prayerName != null && !prayerName.trim().isEmpty()) ? prayerName : "الصلاة";
+            isPreparing = true;
+            lastPlayStartTimeMs = now;
+            currentPrayerName = effectivePrayerName;
 
             // 1. Acquire WakeLock to keep CPU awake while Adhan plays
             PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
             if (powerManager != null) {
                 wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Salati:AdhanAudioWakeLock");
                 wakeLock.setReferenceCounted(false);
-                // Safety limit of 5 minutes
-                wakeLock.acquire(5 * 60 * 1000L);
+                // Safety limit of 6 minutes (Adhan length is ~3-4 minutes)
+                wakeLock.acquire(6 * 60 * 1000L);
             }
 
             // 2. Setup AudioFocus with USAGE_ALARM
@@ -96,14 +123,22 @@ public class AdhanAudioPlayer {
                     .setAudioAttributes(audioAttributes)
                     .setAcceptsDelayedFocusGain(true)
                     .setOnAudioFocusChangeListener(focusChange -> {
-                        // CRITICAL: Transient focus changes (like fingerprint unlock tone, haptics,
-                        // or notification chimes) MUST NOT stop or pause the Adhan!
-                        // We only stop on permanent AUDIOFOCUS_LOSS (e.g. an active incoming telephone call).
-                        if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-                            Log.d(TAG, "Permanent AudioFocus loss detected, stopping Adhan.");
-                            stop(context);
-                        } else {
-                            Log.d(TAG, "Transient AudioFocus event (" + focusChange + ") ignored to prevent Adhan cutoff.");
+                        // CRITICAL: Phone movements, shakes, tilts, fingerprint clicks, or gesture muting
+                        // can send AudioFocus events (such as AUDIOFOCUS_LOSS or transient duck).
+                        // Under user requirements, the Adhan MUST NOT stop or pause on phone movement.
+                        // It must continue to the end and only stop via the "إيقاف الأذان" notification button.
+                        Log.d(TAG, "AudioFocus change received: " + focusChange + ", preserving Adhan playback.");
+                        try {
+                            synchronized (AdhanAudioPlayer.this) {
+                                if (mediaPlayer != null && isPlaying) {
+                                    mediaPlayer.setVolume(1.0f, 1.0f);
+                                    if (!mediaPlayer.isPlaying()) {
+                                        mediaPlayer.start();
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Exception in onAudioFocusChangeListener", e);
                         }
                     })
                     .build();
@@ -113,9 +148,17 @@ public class AdhanAudioPlayer {
                 }
             } else if (audioManager != null) {
                 audioManager.requestAudioFocus(focusChange -> {
-                    if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-                        stop(context);
-                    }
+                    Log.d(TAG, "AudioFocus change received (pre-O): " + focusChange);
+                    try {
+                        synchronized (AdhanAudioPlayer.this) {
+                            if (mediaPlayer != null && isPlaying) {
+                                mediaPlayer.setVolume(1.0f, 1.0f);
+                                if (!mediaPlayer.isPlaying()) {
+                                    mediaPlayer.start();
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
                 }, AudioManager.STREAM_ALARM, AudioManager.AUDIOFOCUS_GAIN);
             }
 
@@ -134,12 +177,15 @@ public class AdhanAudioPlayer {
 
             mediaPlayer.setOnPreparedListener(mp -> {
                 try {
-                    mp.start();
                     synchronized (AdhanAudioPlayer.this) {
+                        isPreparing = false;
                         isPlaying = true;
                     }
+                    mp.setVolume(1.0f, 1.0f);
+                    mp.start();
                     Log.d(TAG, "Native Adhan playback started successfully for: " + currentPrayerName);
                     showOngoingAdhanNotification(context, currentPrayerName);
+                    startWatchdog();
                 } catch (Exception e) {
                     Log.e(TAG, "Error starting MediaPlayer in onPrepared", e);
                     stop(context);
@@ -171,6 +217,8 @@ public class AdhanAudioPlayer {
     }
 
     private synchronized void stopPlaybackInternal(Context context) {
+        stopWatchdog();
+        isPreparing = false;
         isPlaying = false;
         currentPrayerName = "";
 
@@ -203,6 +251,37 @@ public class AdhanAudioPlayer {
                     audioFocusRequest = null;
                 }
             } catch (Exception ignored) {}
+        }
+    }
+
+    private synchronized void startWatchdog() {
+        stopWatchdog();
+        watchdogRunnable = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (AdhanAudioPlayer.this) {
+                    if (isPlaying && mediaPlayer != null) {
+                        try {
+                            mediaPlayer.setVolume(1.0f, 1.0f);
+                            // If an OS sensor or gesture paused the player unexpectedly without user tapping stop,
+                            // immediately resume playback.
+                            if (!mediaPlayer.isPlaying()) {
+                                Log.d(TAG, "Watchdog detected unexpected pause, resuming Adhan playback.");
+                                mediaPlayer.start();
+                            }
+                        } catch (Exception ignored) {}
+                        watchdogHandler.postDelayed(this, 500);
+                    }
+                }
+            }
+        };
+        watchdogHandler.postDelayed(watchdogRunnable, 500);
+    }
+
+    private synchronized void stopWatchdog() {
+        if (watchdogRunnable != null) {
+            watchdogHandler.removeCallbacks(watchdogRunnable);
+            watchdogRunnable = null;
         }
     }
 

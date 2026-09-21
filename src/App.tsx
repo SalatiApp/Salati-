@@ -16,6 +16,7 @@ import { CityData, TabType, UserSettings } from './types';
 import { calculateDailyPrayers } from './utils/prayerCalculations';
 import { sendPrayerNotification, sendPrePrayerNotification, soundManager } from './utils/sound';
 import { scheduleAutomaticAdhanAlarms } from './utils/prayerAlarmScheduler';
+import { Capacitor } from '@capacitor/core';
 
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
@@ -379,6 +380,13 @@ export default function App() {
       try {
         sessionStorage.setItem('salati_last_adhan_minute', currentMinuteKey);
       } catch {}
+
+      // On native Android, exact prayer Adhan is scheduled and handled authoritatively
+      // by AlarmManager and AdhanAudioPlayer. Skipping React foreground sound trigger on native
+      // prevents duplicate playback or restart from 0:00 when the phone is moved or screen wakes up.
+      if (Capacitor.isNativePlatform()) {
+        return;
+      }
 
       if (settings.adhanType === 'silent') {
         return;
