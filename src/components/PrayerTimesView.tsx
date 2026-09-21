@@ -234,8 +234,7 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
 
         <div className="divide-y divide-slate-100 dark:divide-slate-700/40">
           {effectivePrayers.map((prayer) => {
-            const isAlertKey = prayer.id !== 'sunrise';
-            const isAlertOn = isAlertKey && settings?.prayerAlerts ? settings.prayerAlerts[prayer.id as keyof UserSettings['prayerAlerts']] : false;
+            const isAlertOn = settings?.prayerAlerts ? (settings.prayerAlerts[prayer.id as keyof UserSettings['prayerAlerts']] ?? true) : true;
 
             return (
               <div
@@ -278,26 +277,24 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
 
                 {/* Left: Time and Notification Toggle */}
                 <div className="flex items-center gap-3" dir="ltr">
-                  {isAlertKey && (
-                    <button
-                      onClick={() => onUpdatePrayerAlert && onUpdatePrayerAlert(prayer.id as keyof UserSettings['prayerAlerts'])}
-                      className={`p-1.5 rounded-lg transition active:scale-95 ${
-                        prayer.isNext
-                          ? isAlertOn
-                            ? 'text-amber-300 hover:bg-emerald-700/80'
-                            : 'text-emerald-400/50 hover:bg-emerald-700/80'
-                          : isAlertOn
-                          ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700'
-                          : 'text-slate-300 dark:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700'
-                      }`}
-                      title={isAlertOn ? 'التنبيه مفعل' : 'التنبيه معطل'}
-                      aria-label="تنبيه الأذان"
-                    >
-                      {isAlertOn ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => onUpdatePrayerAlert && onUpdatePrayerAlert(prayer.id as keyof UserSettings['prayerAlerts'])}
+                    className={`p-1.5 rounded-lg transition active:scale-95 ${
+                      prayer.isNext
+                        ? isAlertOn
+                          ? 'text-amber-300 hover:bg-emerald-700/80'
+                          : 'text-emerald-400/50 hover:bg-emerald-700/80'
+                        : isAlertOn
+                        ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700'
+                        : 'text-slate-300 dark:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
+                    title={isAlertOn ? 'التنبيه مفعل' : 'التنبيه معطل'}
+                    aria-label={`تنبيه ${prayer.nameAr}`}
+                  >
+                    {isAlertOn ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                  </button>
                   <span
-                    className={`font-bold text-lg tracking-tight font-mono ${
+                    className={`font-bold text-lg tracking-tight font-mono min-w-[3.5rem] text-right ${
                       prayer.isNext ? 'text-amber-300' : 'text-slate-900 dark:text-slate-100'
                     }`}
                   >
@@ -316,7 +313,7 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px] opacity-10 pointer-events-none" />
 
         <div className="relative z-10">
-          <p className="font-quran text-2xl sm:text-3xl md:text-[28px] text-amber-300 font-bold leading-[2.2] sm:leading-[2.4] tracking-normal my-1 drop-shadow-md selection:bg-amber-400 selection:text-slate-950">
+          <p className="font-quran text-2xl sm:text-3xl md:text-[28px] text-white font-bold leading-[2.2] sm:leading-[2.4] tracking-normal my-1 drop-shadow-md selection:bg-white/20 selection:text-white">
             ﴿ إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَوْقُوتًا ﴾
           </p>
 

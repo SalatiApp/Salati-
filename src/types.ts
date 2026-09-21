@@ -52,6 +52,7 @@ export interface UserSettings {
 
   prayerAlerts: {
     fajr: boolean;
+    sunrise?: boolean;
     dhuhr: boolean;
     asr: boolean;
     maghrib: boolean;

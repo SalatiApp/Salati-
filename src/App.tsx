@@ -39,6 +39,7 @@ const DEFAULT_SETTINGS: UserSettings = {
 
   prayerAlerts: {
     fajr: true,
+    sunrise: true,
     dhuhr: true,
     asr: true,
     maghrib: true,
