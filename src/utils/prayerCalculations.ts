@@ -1,10 +1,18 @@
-import { CalculationMethod, Coordinates, Madhab, PrayerTimes, Qibla } from 'adhan';
+import { CalculationMethod, CalculationParameters, Coordinates, Madhab, PrayerTimes, Qibla } from 'adhan';
 import { CalculationMethodKey, MadhabKey, PrayerTimeItem, UserSettings } from '../types';
 
 export function getCalculationParameters(methodKey: CalculationMethodKey, madhabKey: MadhabKey) {
-  let params;
+  let params: CalculationParameters;
 
   switch (methodKey) {
+    case 'Morocco': {
+      // Moroccan Ministry of Habous and Islamic Affairs (وزارة الأوقاف والشؤون الإسلامية بالمملكة المغربية)
+      // Fajr angle: 19°, Isha angle: 17°, Dhuhr: +5 minutes after zawal (solar transit), Maliki/Shafi Asr
+      params = new CalculationParameters('Morocco', 19, 17);
+      params.methodAdjustments.dhuhr = 5;
+      params.madhab = Madhab.Shafi;
+      return params;
+    }
     case 'Egyptian':
       params = CalculationMethod.Egyptian();
       break;
@@ -44,20 +52,80 @@ export function getCalculationParameters(methodKey: CalculationMethodKey, madhab
   return params;
 }
 
+export function getTimezoneOffsetMinutes(
+  timeZone: string = 'Africa/Casablanca',
+  date: Date = new Date()
+): number {
+  const effectiveTz = timeZone || 'Africa/Casablanca';
+
+  // Specific check for Africa/Casablanca (Morocco)
+  // Royal Decree No. 2.26.530 (passed June 25, 2026):
+  // Morocco permanently returned to Greenwich Mean Time (GMT, UTC+0) on Sunday 20 September 2026 at 02:00 AM.
+  // Older runtime tzdata incorrectly assumes GMT+1 during September 2026.
+  if (effectiveTz === 'Africa/Casablanca') {
+    const permanentGmtDate = new Date('2026-09-20T02:00:00Z');
+    if (date.getTime() >= permanentGmtDate.getTime()) {
+      return 0; // Permanent GMT (UTC+0)
+    }
+  }
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: effectiveTz,
+      timeZoneName: 'longOffset',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(date);
+    const tzPart = parts.find((p) => p.type === 'timeZoneName')?.value;
+    if (tzPart) {
+      const match = tzPart.match(/GMT([+-]\d{1,2}):?(\d{2})?/);
+      if (match) {
+        const hours = parseInt(match[1], 10);
+        const minutes = match[2] ? parseInt(match[2], 10) : 0;
+        return hours * 60 + (hours < 0 ? -minutes : minutes);
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to resolve timezone offset for', effectiveTz, err);
+  }
+
+  return 0;
+}
+
+export function formatPrayerTime(
+  d: Date,
+  timeZone: string = 'Africa/Casablanca',
+  use24: boolean = true
+): string {
+  const offsetMin = getTimezoneOffsetMinutes(timeZone, d);
+  const localTime = new Date(d.getTime() + offsetMin * 60 * 1000);
+  let h = localTime.getUTCHours();
+  const m = String(localTime.getUTCMinutes()).padStart(2, '0');
+
+  if (use24) {
+    return `${String(h).padStart(2, '0')}:${m}`;
+  }
+
+  const suffix = h >= 12 ? 'م' : 'ص';
+  h = h % 12 || 12;
+  return `${String(h).padStart(2, '0')}:${m} ${suffix}`;
+}
+
 export function getCalendarDateInTimezone(
   date: Date = new Date(),
   timeZone: string = 'Africa/Casablanca'
 ): Date {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timeZone || 'Africa/Casablanca',
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-  });
-  const parts = formatter.formatToParts(date);
-  const year = parseInt(parts.find((p) => p.type === 'year')!.value, 10);
-  const month = parseInt(parts.find((p) => p.type === 'month')!.value, 10) - 1;
-  const day = parseInt(parts.find((p) => p.type === 'day')!.value, 10);
+  const offsetMin = getTimezoneOffsetMinutes(timeZone, date);
+  const localTime = new Date(date.getTime() + offsetMin * 60 * 1000);
+  const year = localTime.getUTCFullYear();
+  const month = localTime.getUTCMonth();
+  const day = localTime.getUTCDate();
 
   return new Date(year, month, day, 12, 0, 0);
 }
@@ -83,14 +151,9 @@ export function calculateDailyPrayers(
 
   const now = new Date();
 
-  // عرض مواقيت الصلاة دائماً بنظام 24 ساعة وبالأرقام الغربية وفق التوقيت الرسمي للمدينة (Africa/Casablanca افتراضياً للمغرب)
+  // عرض مواقيت الصلاة بدقة حسب نظام 24 ساعة أو 12 ساعة وفق التوقيت الرسمي للمدينة
   const formatTime = (d: Date) => {
-    return d.toLocaleTimeString('ar-EG-u-nu-latn', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: timeZone || 'Africa/Casablanca',
-    });
+    return formatPrayerTime(d, timeZone, settings.timeFormat24 !== false);
   };
 
   const rawList: {

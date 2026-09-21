@@ -24,6 +24,7 @@ export interface CityData {
 }
 
 export type CalculationMethodKey =
+  | 'Morocco'
   | 'MuslimWorldLeague'
   | 'Egyptian'
   | 'Karachi'

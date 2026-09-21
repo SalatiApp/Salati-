@@ -5,7 +5,7 @@ import {
 } from '@capacitor/local-notifications';
 import { Coordinates, PrayerTimes } from 'adhan';
 import { UserSettings } from '../types';
-import { getCalculationParameters, getCalendarDateInTimezone } from './prayerCalculations';
+import { getCalculationParameters, getCalendarDateInTimezone, formatPrayerTime } from './prayerCalculations';
 import { MORNING_AZKAR, EVENING_AZKAR } from '../data/azkar';
 import { AdhanNative } from './nativeAdhan';
 
@@ -659,16 +659,11 @@ export async function scheduleAutomaticAdhanAlarms(
             dayOffset * 10 +
             prayer.index;
 
-          const timeFormatted =
-            prayerTime.toLocaleTimeString(
-              'ar-MA-u-nu-latn',
-              {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-                timeZone: effectiveTimeZone,
-              }
-            );
+          const timeFormatted = formatPrayerTime(
+            prayerTime,
+            effectiveTimeZone,
+            settings.timeFormat24 !== false
+          );
 
           // Add to native AlarmManager schedule for uninterrupted playback
           nativePrayersToSchedule.push({

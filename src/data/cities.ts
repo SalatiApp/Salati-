@@ -149,7 +149,7 @@ export const CITIES: CityData[] = [
     latitude: 33.5731,
     longitude: -7.5898,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'rabat',
@@ -160,7 +160,7 @@ export const CITIES: CityData[] = [
     latitude: 34.0209,
     longitude: -6.8416,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'fes',
@@ -171,7 +171,7 @@ export const CITIES: CityData[] = [
     latitude: 34.0331,
     longitude: -5.0003,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tangier',
@@ -182,7 +182,7 @@ export const CITIES: CityData[] = [
     latitude: 35.7595,
     longitude: -5.8340,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'marrakech',
@@ -193,7 +193,7 @@ export const CITIES: CityData[] = [
     latitude: 31.6295,
     longitude: -7.9811,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'sale',
@@ -204,7 +204,7 @@ export const CITIES: CityData[] = [
     latitude: 34.0531,
     longitude: -6.7985,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'meknes',
@@ -215,7 +215,7 @@ export const CITIES: CityData[] = [
     latitude: 33.8938,
     longitude: -5.5516,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'agadir',
@@ -226,7 +226,7 @@ export const CITIES: CityData[] = [
     latitude: 30.4278,
     longitude: -9.5981,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'oujda',
@@ -237,7 +237,7 @@ export const CITIES: CityData[] = [
     latitude: 34.6867,
     longitude: -1.9114,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'kenitra',
@@ -248,7 +248,7 @@ export const CITIES: CityData[] = [
     latitude: 34.2610,
     longitude: -6.5802,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tetouan',
@@ -259,7 +259,7 @@ export const CITIES: CityData[] = [
     latitude: 35.5785,
     longitude: -5.3684,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'safi',
@@ -270,7 +270,7 @@ export const CITIES: CityData[] = [
     latitude: 32.2994,
     longitude: -9.2372,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'temara',
@@ -281,7 +281,7 @@ export const CITIES: CityData[] = [
     latitude: 33.9267,
     longitude: -6.9122,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'inezgane',
@@ -292,7 +292,7 @@ export const CITIES: CityData[] = [
     latitude: 30.3556,
     longitude: -9.5378,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'mohammedia',
@@ -303,7 +303,7 @@ export const CITIES: CityData[] = [
     latitude: 33.6866,
     longitude: -7.3830,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'laayoune',
@@ -314,7 +314,7 @@ export const CITIES: CityData[] = [
     latitude: 27.1536,
     longitude: -13.2033,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'khouribga',
@@ -325,7 +325,7 @@ export const CITIES: CityData[] = [
     latitude: 32.8811,
     longitude: -6.9063,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'beni_mellal',
@@ -336,7 +336,7 @@ export const CITIES: CityData[] = [
     latitude: 32.3394,
     longitude: -6.3608,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'el_jadida',
@@ -347,7 +347,7 @@ export const CITIES: CityData[] = [
     latitude: 33.2316,
     longitude: -8.5007,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'taza',
@@ -358,7 +358,7 @@ export const CITIES: CityData[] = [
     latitude: 34.2139,
     longitude: -4.0100,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'nador',
@@ -369,7 +369,7 @@ export const CITIES: CityData[] = [
     latitude: 35.1681,
     longitude: -2.9335,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'settat',
@@ -380,7 +380,7 @@ export const CITIES: CityData[] = [
     latitude: 33.0010,
     longitude: -7.6166,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'berrechid',
@@ -391,7 +391,7 @@ export const CITIES: CityData[] = [
     latitude: 33.2655,
     longitude: -7.5875,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'khemisset',
@@ -402,7 +402,7 @@ export const CITIES: CityData[] = [
     latitude: 33.8240,
     longitude: -6.0663,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'ksar_el_kebir',
@@ -413,7 +413,7 @@ export const CITIES: CityData[] = [
     latitude: 35.0017,
     longitude: -5.9042,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'larache',
@@ -424,7 +424,7 @@ export const CITIES: CityData[] = [
     latitude: 35.1932,
     longitude: -6.1557,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'guelmim',
@@ -435,7 +435,7 @@ export const CITIES: CityData[] = [
     latitude: 28.9864,
     longitude: -10.0574,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'berkane',
@@ -446,7 +446,7 @@ export const CITIES: CityData[] = [
     latitude: 34.9200,
     longitude: -2.3200,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'taourirt',
@@ -457,7 +457,7 @@ export const CITIES: CityData[] = [
     latitude: 34.4073,
     longitude: -2.8973,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'fquih_ben_salah',
@@ -468,7 +468,7 @@ export const CITIES: CityData[] = [
     latitude: 32.5008,
     longitude: -6.6875,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'dakhla',
@@ -479,7 +479,7 @@ export const CITIES: CityData[] = [
     latitude: 23.6848,
     longitude: -15.9570,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'sidi_slimane',
@@ -490,7 +490,7 @@ export const CITIES: CityData[] = [
     latitude: 34.2650,
     longitude: -5.9264,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'errachidia',
@@ -501,7 +501,7 @@ export const CITIES: CityData[] = [
     latitude: 31.9317,
     longitude: -4.4244,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'taroudant',
@@ -512,7 +512,7 @@ export const CITIES: CityData[] = [
     latitude: 30.4706,
     longitude: -8.8770,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'essaouira',
@@ -523,7 +523,7 @@ export const CITIES: CityData[] = [
     latitude: 31.5085,
     longitude: -9.7595,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tiflet',
@@ -534,7 +534,7 @@ export const CITIES: CityData[] = [
     latitude: 33.8942,
     longitude: -6.3117,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'oulad_teima',
@@ -545,7 +545,7 @@ export const CITIES: CityData[] = [
     latitude: 30.3956,
     longitude: -9.2131,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'sefrou',
@@ -556,7 +556,7 @@ export const CITIES: CityData[] = [
     latitude: 33.8314,
     longitude: -4.8281,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'youssoufia',
@@ -567,7 +567,7 @@ export const CITIES: CityData[] = [
     latitude: 32.2464,
     longitude: -8.5294,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tan_tan',
@@ -578,7 +578,7 @@ export const CITIES: CityData[] = [
     latitude: 28.4378,
     longitude: -11.1031,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'ouezzane',
@@ -589,7 +589,7 @@ export const CITIES: CityData[] = [
     latitude: 34.7972,
     longitude: -5.5822,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'guercif',
@@ -600,7 +600,7 @@ export const CITIES: CityData[] = [
     latitude: 34.2257,
     longitude: -3.3556,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'ouarzazate',
@@ -611,7 +611,7 @@ export const CITIES: CityData[] = [
     latitude: 30.9335,
     longitude: -6.9370,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'al_hoceima',
@@ -622,7 +622,7 @@ export const CITIES: CityData[] = [
     latitude: 35.2472,
     longitude: -3.9321,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tiznit',
@@ -633,7 +633,7 @@ export const CITIES: CityData[] = [
     latitude: 29.6974,
     longitude: -9.7316,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'chefchaouen',
@@ -644,7 +644,7 @@ export const CITIES: CityData[] = [
     latitude: 35.1688,
     longitude: -5.2636,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'fnideq',
@@ -655,7 +655,7 @@ export const CITIES: CityData[] = [
     latitude: 35.8497,
     longitude: -5.3528,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'mdiq',
@@ -666,7 +666,7 @@ export const CITIES: CityData[] = [
     latitude: 35.6858,
     longitude: -5.3253,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'souk_el_arbaa',
@@ -677,7 +677,7 @@ export const CITIES: CityData[] = [
     latitude: 34.6853,
     longitude: -5.9867,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'midelt',
@@ -688,7 +688,7 @@ export const CITIES: CityData[] = [
     latitude: 32.6853,
     longitude: -4.7333,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'azrou',
@@ -699,7 +699,7 @@ export const CITIES: CityData[] = [
     latitude: 33.4344,
     longitude: -5.2214,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'ifrane',
@@ -710,7 +710,7 @@ export const CITIES: CityData[] = [
     latitude: 33.5273,
     longitude: -5.1074,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tinghir',
@@ -721,7 +721,7 @@ export const CITIES: CityData[] = [
     latitude: 31.5147,
     longitude: -5.5328,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'zagora',
@@ -732,7 +732,7 @@ export const CITIES: CityData[] = [
     latitude: 30.3322,
     longitude: -5.8383,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'chichaoua',
@@ -743,7 +743,7 @@ export const CITIES: CityData[] = [
     latitude: 31.5342,
     longitude: -8.7658,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'el_kelaa_des_sraghna',
@@ -754,7 +754,7 @@ export const CITIES: CityData[] = [
     latitude: 32.0483,
     longitude: -7.4083,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'benguerir',
@@ -765,7 +765,7 @@ export const CITIES: CityData[] = [
     latitude: 32.2333,
     longitude: -7.9500,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'sidi_kacem',
@@ -776,7 +776,7 @@ export const CITIES: CityData[] = [
     latitude: 34.2217,
     longitude: -5.7078,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'sidi_bennour',
@@ -787,7 +787,7 @@ export const CITIES: CityData[] = [
     latitude: 32.6525,
     longitude: -8.4289,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'azilal',
@@ -798,7 +798,7 @@ export const CITIES: CityData[] = [
     latitude: 31.9619,
     longitude: -6.5689,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'khenifra',
@@ -809,7 +809,7 @@ export const CITIES: CityData[] = [
     latitude: 32.9394,
     longitude: -5.6675,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'smara',
@@ -820,7 +820,7 @@ export const CITIES: CityData[] = [
     latitude: 26.7384,
     longitude: -11.6719,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'boujdour',
@@ -831,7 +831,7 @@ export const CITIES: CityData[] = [
     latitude: 26.1264,
     longitude: -14.4842,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tarfaya',
@@ -842,7 +842,7 @@ export const CITIES: CityData[] = [
     latitude: 27.9392,
     longitude: -12.9261,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'assa',
@@ -853,7 +853,7 @@ export const CITIES: CityData[] = [
     latitude: 28.6083,
     longitude: -9.4267,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'zag',
@@ -864,7 +864,7 @@ export const CITIES: CityData[] = [
     latitude: 28.0211,
     longitude: -9.2981,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tata',
@@ -875,7 +875,7 @@ export const CITIES: CityData[] = [
     latitude: 29.7428,
     longitude: -7.9758,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'sidi_ifni',
@@ -886,7 +886,7 @@ export const CITIES: CityData[] = [
     latitude: 29.3797,
     longitude: -10.1731,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'taounate',
@@ -897,7 +897,7 @@ export const CITIES: CityData[] = [
     latitude: 34.5381,
     longitude: -4.6406,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'driouch',
@@ -908,7 +908,7 @@ export const CITIES: CityData[] = [
     latitude: 34.9786,
     longitude: -3.3917,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'jerada',
@@ -919,7 +919,7 @@ export const CITIES: CityData[] = [
     latitude: 34.3117,
     longitude: -2.1636,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'figuig',
@@ -930,7 +930,7 @@ export const CITIES: CityData[] = [
     latitude: 32.1089,
     longitude: -1.2289,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'bouarfa',
@@ -941,7 +941,7 @@ export const CITIES: CityData[] = [
     latitude: 32.5306,
     longitude: -1.9656,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'el_hajeb',
@@ -952,7 +952,7 @@ export const CITIES: CityData[] = [
     latitude: 33.6872,
     longitude: -5.3711,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'boulemane',
@@ -963,7 +963,7 @@ export const CITIES: CityData[] = [
     latitude: 33.3622,
     longitude: -4.7347,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'missour',
@@ -974,7 +974,7 @@ export const CITIES: CityData[] = [
     latitude: 33.0483,
     longitude: -3.9933,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'moulay_yacoub',
@@ -985,7 +985,7 @@ export const CITIES: CityData[] = [
     latitude: 34.0886,
     longitude: -5.1803,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'skhirat',
@@ -996,7 +996,7 @@ export const CITIES: CityData[] = [
     latitude: 33.8500,
     longitude: -7.0333,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'benslimane',
@@ -1007,7 +1007,7 @@ export const CITIES: CityData[] = [
     latitude: 33.6167,
     longitude: -7.1167,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'nouaceur',
@@ -1018,7 +1018,7 @@ export const CITIES: CityData[] = [
     latitude: 33.3614,
     longitude: -7.5772,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'mediouna',
@@ -1029,7 +1029,7 @@ export const CITIES: CityData[] = [
     latitude: 33.4500,
     longitude: -7.5167,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tahannaout',
@@ -1040,7 +1040,7 @@ export const CITIES: CityData[] = [
     latitude: 31.3500,
     longitude: -7.9500,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'demnate',
@@ -1051,7 +1051,7 @@ export const CITIES: CityData[] = [
     latitude: 31.7311,
     longitude: -7.0361,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'kasba_tadla',
@@ -1062,7 +1062,7 @@ export const CITIES: CityData[] = [
     latitude: 32.5972,
     longitude: -5.9986,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'oued_zem',
@@ -1073,7 +1073,7 @@ export const CITIES: CityData[] = [
     latitude: 32.8639,
     longitude: -6.5736,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'bejaad',
@@ -1084,7 +1084,7 @@ export const CITIES: CityData[] = [
     latitude: 32.7667,
     longitude: -6.2833,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'aousserd',
@@ -1095,7 +1095,7 @@ export const CITIES: CityData[] = [
     latitude: 22.5564,
     longitude: -14.3314,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'bir_gandouz',
@@ -1106,7 +1106,7 @@ export const CITIES: CityData[] = [
     latitude: 21.6167,
     longitude: -16.4667,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'el_guergarat',
@@ -1117,7 +1117,7 @@ export const CITIES: CityData[] = [
     latitude: 21.4322,
     longitude: -16.9606,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'rissani',
@@ -1128,7 +1128,7 @@ export const CITIES: CityData[] = [
     latitude: 31.2833,
     longitude: -4.2667,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'erfoud',
@@ -1139,7 +1139,7 @@ export const CITIES: CityData[] = [
     latitude: 31.4333,
     longitude: -4.2333,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'goulmima',
@@ -1150,7 +1150,7 @@ export const CITIES: CityData[] = [
     latitude: 31.6917,
     longitude: -4.9583,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'kelaat_mgouna',
@@ -1161,7 +1161,7 @@ export const CITIES: CityData[] = [
     latitude: 31.2500,
     longitude: -6.1333,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'boumalne_dades',
@@ -1172,7 +1172,7 @@ export const CITIES: CityData[] = [
     latitude: 31.3714,
     longitude: -5.9867,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'agdz',
@@ -1183,7 +1183,7 @@ export const CITIES: CityData[] = [
     latitude: 30.6978,
     longitude: -6.4478,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'mhamid_el_ghizlane',
@@ -1194,7 +1194,7 @@ export const CITIES: CityData[] = [
     latitude: 29.8278,
     longitude: -5.7258,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tafraout',
@@ -1205,7 +1205,7 @@ export const CITIES: CityData[] = [
     latitude: 29.7214,
     longitude: -8.9778,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'biougra',
@@ -1216,7 +1216,7 @@ export const CITIES: CityData[] = [
     latitude: 30.2144,
     longitude: -9.3708,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'ait_melloul',
@@ -1227,7 +1227,7 @@ export const CITIES: CityData[] = [
     latitude: 30.3342,
     longitude: -9.4975,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'dcheira',
@@ -1238,7 +1238,7 @@ export const CITIES: CityData[] = [
     latitude: 30.3700,
     longitude: -9.5300,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'taghazout',
@@ -1249,7 +1249,7 @@ export const CITIES: CityData[] = [
     latitude: 30.5425,
     longitude: -9.7092,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'asilah',
@@ -1260,7 +1260,7 @@ export const CITIES: CityData[] = [
     latitude: 35.4667,
     longitude: -6.0333,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'saidia',
@@ -1271,7 +1271,7 @@ export const CITIES: CityData[] = [
     latitude: 35.0825,
     longitude: -2.2322,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'zaio',
@@ -1282,7 +1282,7 @@ export const CITIES: CityData[] = [
     latitude: 34.9333,
     longitude: -2.7333,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'azemmour',
@@ -1293,7 +1293,7 @@ export const CITIES: CityData[] = [
     latitude: 33.2878,
     longitude: -8.3422,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'bouznika',
@@ -1304,7 +1304,7 @@ export const CITIES: CityData[] = [
     latitude: 33.7894,
     longitude: -7.1597,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'deroua',
@@ -1315,7 +1315,7 @@ export const CITIES: CityData[] = [
     latitude: 33.4167,
     longitude: -7.5333,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'tit_mellil',
@@ -1326,7 +1326,7 @@ export const CITIES: CityData[] = [
     latitude: 33.5556,
     longitude: -7.4833,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'ain_harrouda',
@@ -1337,7 +1337,7 @@ export const CITIES: CityData[] = [
     latitude: 33.6333,
     longitude: -7.4500,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'souk_sebt',
@@ -1348,7 +1348,7 @@ export const CITIES: CityData[] = [
     latitude: 32.2981,
     longitude: -6.7028,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'rommani',
@@ -1359,7 +1359,7 @@ export const CITIES: CityData[] = [
     latitude: 33.5222,
     longitude: -6.6111,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'asni',
@@ -1370,7 +1370,7 @@ export const CITIES: CityData[] = [
     latitude: 31.2500,
     longitude: -7.9833,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'imintanoute',
@@ -1381,7 +1381,7 @@ export const CITIES: CityData[] = [
     latitude: 31.2000,
     longitude: -8.8500,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'chemaia',
@@ -1392,7 +1392,7 @@ export const CITIES: CityData[] = [
     latitude: 32.0667,
     longitude: -8.6833,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'bouizakarne',
@@ -1403,7 +1403,7 @@ export const CITIES: CityData[] = [
     latitude: 29.1722,
     longitude: -9.7356,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'el_ouatia',
@@ -1414,7 +1414,7 @@ export const CITIES: CityData[] = [
     latitude: 28.4900,
     longitude: -11.3400,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'el_marsa',
@@ -1425,7 +1425,7 @@ export const CITIES: CityData[] = [
     latitude: 27.1250,
     longitude: -13.4167,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   {
     id: 'fahs_anjra',
@@ -1436,7 +1436,7 @@ export const CITIES: CityData[] = [
     latitude: 35.6881,
     longitude: -5.6175,
     timezone: 'Africa/Casablanca',
-    defaultMethod: 'MuslimWorldLeague',
+    defaultMethod: 'Morocco',
   },
   // Algeria
   {
@@ -1664,6 +1664,7 @@ export const CITIES: CityData[] = [
 ];
 
 export const CALCULATION_METHODS = [
+  { key: 'Morocco', nameAr: 'وزارة الأوقاف والشؤون الإسلامية (المملكة المغربية)', nameEn: 'Ministry of Habous & Islamic Affairs (Morocco)' },
   { key: 'UmmAlQura', nameAr: 'جامعة أم القرى - مكة المكرمة', nameEn: 'Umm Al-Qura University, Makkah' },
   { key: 'Egyptian', nameAr: 'الهيئة المصرية العامة للمساحة', nameEn: 'Egyptian General Authority of Survey' },
   { key: 'MuslimWorldLeague', nameAr: 'رابطة العالم الإسلامي', nameEn: 'Muslim World League (MWL)' },

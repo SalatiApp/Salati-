@@ -33,7 +33,7 @@ import { adMobService } from './services/adMobService';
 const DEFAULT_SETTINGS: UserSettings = {
   locationMode: 'city',
   selectedCityId: 'casablanca',
-  calculationMethod: 'MuslimWorldLeague',
+  calculationMethod: 'Morocco',
   madhab: 'shafi',
   adhanType: 'full',
 
@@ -60,9 +60,17 @@ export default function App() {
       const saved = localStorage.getItem('salati_settings');
 
       if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure Moroccan cities default to the official Morocco calculation method
+        if (
+          (!parsed.calculationMethod || parsed.calculationMethod === 'MuslimWorldLeague') &&
+          (!parsed.selectedCityId || parsed.selectedCityId === 'casablanca' || parsed.selectedCityId === 'fes' || parsed.selectedCityId === 'rabat')
+        ) {
+          parsed.calculationMethod = 'Morocco';
+        }
         return {
           ...DEFAULT_SETTINGS,
-          ...JSON.parse(saved),
+          ...parsed,
         };
       }
 
@@ -288,16 +296,8 @@ export default function App() {
   // ---------------------------------------------------------
 
   useEffect(() => {
-    const tz = currentCity.timezone || 'Africa/Casablanca';
-    const currentMinuteKey = new Intl.DateTimeFormat('en-GB', {
-      timeZone: tz,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(now);
+    const currentMinuteNum = Math.floor(now.getTime() / 60000);
+    const currentMinuteKey = currentMinuteNum.toString();
 
     // 1. Check 5-minute pre-prayer notification
     if (lastPreAlertMinuteRef.current !== currentMinuteKey) {
@@ -313,16 +313,7 @@ export default function App() {
         }
 
         const prePrayerMs = prayer.time.getTime() - 5 * 60 * 1000;
-        const isPreMinute =
-          new Intl.DateTimeFormat('en-GB', {
-            timeZone: tz,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          }).format(new Date(prePrayerMs)) === currentMinuteKey;
+        const isPreMinute = Math.floor(prePrayerMs / 60000) === currentMinuteNum;
 
         if (isPreMinute) {
           lastPreAlertMinuteRef.current = currentMinuteKey;
@@ -356,16 +347,7 @@ export default function App() {
         return;
       }
 
-      const sameMinute =
-        new Intl.DateTimeFormat('en-GB', {
-          timeZone: tz,
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        }).format(prayer.time) === currentMinuteKey;
+      const sameMinute = Math.floor(prayer.time.getTime() / 60000) === currentMinuteNum;
 
       if (!sameMinute) {
         return;
