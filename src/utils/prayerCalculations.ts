@@ -7,9 +7,8 @@ export function getCalculationParameters(methodKey: CalculationMethodKey, madhab
   switch (methodKey) {
     case 'Morocco': {
       // Moroccan Ministry of Habous and Islamic Affairs (وزارة الأوقاف والشؤون الإسلامية بالمملكة المغربية)
-      // Fajr angle: 19°, Isha angle: 17°, Dhuhr: +5 minutes after zawal (solar transit), Maliki/Shafi Asr
+      // Fajr angle: 19°, Isha angle: 17°, Dhuhr: calculated solar noon (transit), Maliki/Shafi Asr (shadow factor 1)
       params = new CalculationParameters('Other', 19, 17);
-      params.methodAdjustments.dhuhr = 5;
       params.madhab = Madhab.Shafi;
       return params;
     }
@@ -133,7 +132,7 @@ export function getCalendarDateInTimezone(
 export function calculateDailyPrayers(
   lat: number,
   lng: number,
-  date: Date,
+  date: Date = new Date(),
   settings: UserSettings,
   timeZone: string = 'Africa/Casablanca'
 ): {
@@ -149,7 +148,7 @@ export function calculateDailyPrayers(
   const params = getCalculationParameters(settings.calculationMethod, settings.madhab);
   const prayerTimes = new PrayerTimes(coordinates, targetDate, params);
 
-  const now = new Date();
+  const now = date || new Date();
 
   // عرض مواقيت الصلاة بدقة حسب نظام 24 ساعة أو 12 ساعة وفق التوقيت الرسمي للمدينة
   const formatTime = (d: Date) => {

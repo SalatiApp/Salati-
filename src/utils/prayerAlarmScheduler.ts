@@ -3,9 +3,11 @@ import {
   LocalNotifications,
   LocalNotificationSchema,
 } from '@capacitor/local-notifications';
-import { Coordinates, PrayerTimes } from 'adhan';
 import { UserSettings } from '../types';
-import { getCalculationParameters, getCalendarDateInTimezone, formatPrayerTime } from './prayerCalculations';
+import {
+  getCalendarDateInTimezone,
+  calculateDailyPrayers,
+} from './prayerCalculations';
 import { MORNING_AZKAR, EVENING_AZKAR } from '../data/azkar';
 import { AdhanNative } from './nativeAdhan';
 
@@ -530,18 +532,6 @@ export async function scheduleAutomaticAdhanAlarms(
       return 0;
     }
 
-    const coordinates =
-      new Coordinates(
-        latitude,
-        longitude
-      );
-
-    const params =
-      getCalculationParameters(
-        settings.calculationMethod,
-        settings.madhab
-      );
-
     const now = new Date();
     const effectiveTimeZone = timeZone || 'Africa/Casablanca';
     const baseCalendarDate = getCalendarDateInTimezone(now, effectiveTimeZone);
@@ -568,12 +558,13 @@ export async function scheduleAutomaticAdhanAlarms(
         baseCalendarDate.getDate() + dayOffset
       );
 
-      const prayerTimes =
-        new PrayerTimes(
-          coordinates,
-          targetDate,
-          params
-        );
+      const daily = calculateDailyPrayers(
+        latitude,
+        longitude,
+        targetDate,
+        settings,
+        effectiveTimeZone
+      );
 
       for (const prayer of PRAYERS) {
         if (
@@ -584,35 +575,10 @@ export async function scheduleAutomaticAdhanAlarms(
           continue;
         }
 
-        let prayerTime: Date | null =
-          null;
-
-        switch (prayer.key) {
-          case 'fajr':
-            prayerTime =
-              prayerTimes.fajr;
-            break;
-
-          case 'dhuhr':
-            prayerTime =
-              prayerTimes.dhuhr;
-            break;
-
-          case 'asr':
-            prayerTime =
-              prayerTimes.asr;
-            break;
-
-          case 'maghrib':
-            prayerTime =
-              prayerTimes.maghrib;
-            break;
-
-          case 'isha':
-            prayerTime =
-              prayerTimes.isha;
-            break;
-        }
+        const prayerItem = daily.prayers.find(
+          (p) => p.id === prayer.key
+        );
+        const prayerTime = prayerItem?.time;
 
         if (
           !prayerTime ||
@@ -659,11 +625,7 @@ export async function scheduleAutomaticAdhanAlarms(
             dayOffset * 10 +
             prayer.index;
 
-          const timeFormatted = formatPrayerTime(
-            prayerTime,
-            effectiveTimeZone,
-            settings.timeFormat24 !== false
-          );
+          const timeFormatted = prayerItem.timeFormatted;
 
           // Add to native AlarmManager schedule for uninterrupted playback
           nativePrayersToSchedule.push({

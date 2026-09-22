@@ -48,7 +48,7 @@ const DEFAULT_SETTINGS: UserSettings = {
 
   quranFontSize: 24,
   quranReadingMode: 'day',
-  timeFormat24: false,
+  timeFormat24: true,
   theme: 'emerald',
 
   morningAzkarAlerts: true,
@@ -243,7 +243,7 @@ export default function App() {
   );
 
   // ---------------------------------------------------------
-  // Clock
+  // Clock & App Foreground/Resume Sync
   // ---------------------------------------------------------
 
   useEffect(() => {
@@ -251,7 +251,22 @@ export default function App() {
       setNow(new Date());
     }, 1000);
 
-    return () => clearInterval(timer);
+    const handleResume = () => {
+      setNow(new Date());
+    };
+
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleResume();
+      }
+    });
+
+    window.addEventListener('focus', handleResume);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', handleResume);
+    };
   }, []);
 
   // ---------------------------------------------------------
@@ -272,6 +287,8 @@ export default function App() {
   // Automatic prayer + Azkar notifications
   // ---------------------------------------------------------
 
+  const currentDateKey = `${currentCity.latitude}_${currentCity.longitude}_${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+
   useEffect(() => {
     scheduleAutomaticAdhanAlarms(
       currentCity.latitude,
@@ -280,6 +297,7 @@ export default function App() {
       currentCity.timezone || 'Africa/Casablanca'
     );
   }, [
+    currentDateKey,
     currentCity.latitude,
     currentCity.longitude,
     currentCity.timezone,
