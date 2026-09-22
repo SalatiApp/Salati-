@@ -10,6 +10,18 @@ export default defineConfig(({ command }) => {
   return {
     base: './',
     plugins: [
+      {
+        name: 'vite-client-send-guard',
+        enforce: 'pre',
+        transform(code, id) {
+          if (id.includes('client.mjs') || id.includes('@vite/client')) {
+            return code.replace(
+              /ws\.send\(JSON\.stringify\(data\)\);/g,
+              'if (ws && typeof ws.send === "function" && ws.readyState === 1) { ws.send(JSON.stringify(data)); }'
+            );
+          }
+        },
+      },
       react(),
       tailwindcss(),
       VitePWA({
