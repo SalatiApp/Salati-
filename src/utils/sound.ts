@@ -10,6 +10,8 @@ class SoundManager {
   private currentAudio: HTMLAudioElement | null = null;
   private activeSessionId: number = 0;
   private nativeIsPlaying: boolean = false;
+  private currentAudioResolve: (() => void) | null = null;
+  private nativePollInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     if (Capacitor.isNativePlatform()) {
@@ -118,11 +120,12 @@ class SoundManager {
   }
 
   // Play Adhan audio using local MP3 file (100% offline, zero external dependencies)
-  // Uses the unified adhan.mp3 file for all 5 prayers, including Fajr
+  // Supports both manual test adhan playback (isTest: true) and automatic prayer adhans
   async playAdhan(
     type: 'full' | 'takbeer' | 'beep' | 'silent' = 'full',
     prayerId?: string,
-    prayerName?: string
+    prayerName?: string,
+    isTest: boolean = false
   ): Promise<void> {
     if (type === 'silent') return;
 
@@ -136,30 +139,64 @@ class SoundManager {
       return;
     }
 
-    // On native Android, delegate to our robust MediaPlayer service with USAGE_ALARM.
-    // This completely bypasses WebView lifecycle restrictions, preventing audio termination
-    // when unlocking with fingerprint or pulling down the notification shade.
-    if (Capacitor.isNativePlatform()) {
-      if (this.nativeIsPlaying) {
-        return;
-      }
-      this.nativeIsPlaying = true;
-      try {
-        await AdhanNative.playAdhan({
-          prayerName: prayerName || prayerId || 'الصلاة',
-          adhanType: type,
-        });
-      } catch (err) {
-        console.warn('Native Adhan play error, falling back to WebAudio:', err);
-        this.nativeIsPlaying = false;
-      }
-      return;
-    }
-
-    // Immediately stop any existing audio playback completely to prevent overlap
+    // Immediately stop any existing audio playback completely to prevent overlap and reset state
     this.stopAudio();
 
-    // Start a new exclusive playback session
+    // On native Android, delegate to our robust MediaPlayer service with USAGE_ALARM.
+    if (Capacitor.isNativePlatform()) {
+      return new Promise<void>((resolve) => {
+        let isDone = false;
+
+        const finish = () => {
+          if (!isDone) {
+            isDone = true;
+            this.nativeIsPlaying = false;
+            if (this.nativePollInterval) {
+              clearInterval(this.nativePollInterval);
+              this.nativePollInterval = null;
+            }
+            if (this.currentAudioResolve === finish) {
+              this.currentAudioResolve = null;
+            }
+            resolve();
+          }
+        };
+
+        this.currentAudioResolve = finish;
+
+        AdhanNative.playAdhan({
+          prayerName: prayerName || prayerId || 'الصلاة',
+          adhanType: type,
+          isTest,
+        }).then(() => {
+          this.nativeIsPlaying = true;
+        }).catch((err) => {
+          console.warn('Native Adhan play error, falling back to WebAudio:', err);
+          finish();
+        });
+
+        // Poll native player state to detect natural completion or stop from Android notification
+        this.nativePollInterval = setInterval(async () => {
+          if (isDone) {
+            if (this.nativePollInterval) {
+              clearInterval(this.nativePollInterval);
+              this.nativePollInterval = null;
+            }
+            return;
+          }
+          try {
+            const state = await AdhanNative.isAdhanPlaying();
+            if (!state || !state.isPlaying) {
+              finish();
+            }
+          } catch {
+            finish();
+          }
+        }, 500);
+      });
+    }
+
+    // Web Audio HTMLMediaElement playback
     const sessionId = ++this.activeSessionId;
     const adhanFile = 'adhan.mp3';
 
@@ -195,12 +232,17 @@ class SoundManager {
       const finish = () => {
         if (!isDone) {
           isDone = true;
+          if (this.currentAudioResolve === finish) {
+            this.currentAudioResolve = null;
+          }
           if (this.activeSessionId === sessionId) {
             this.currentAudio = null;
           }
           resolve();
         }
       };
+
+      this.currentAudioResolve = finish;
 
       const tryCandidate = () => {
         // If stopped or a new session has started, abort immediately
@@ -265,9 +307,28 @@ class SoundManager {
     });
   }
 
+  playTestAdhan(
+    type: 'full' | 'takbeer' | 'beep' | 'silent' = 'full',
+    prayerId?: string,
+    prayerName?: string
+  ): Promise<void> {
+    return this.playAdhan(type, prayerId, prayerName, true);
+  }
+
   stopAudio() {
     // Invalidate active session so in-flight candidate retries abort immediately
     this.activeSessionId++;
+
+    if (this.nativePollInterval) {
+      clearInterval(this.nativePollInterval);
+      this.nativePollInterval = null;
+    }
+
+    if (this.currentAudioResolve) {
+      const resolve = this.currentAudioResolve;
+      this.currentAudioResolve = null;
+      resolve();
+    }
 
     if (Capacitor.isNativePlatform()) {
       this.nativeIsPlaying = false;

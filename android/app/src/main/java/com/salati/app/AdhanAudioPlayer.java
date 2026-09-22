@@ -74,6 +74,10 @@ public class AdhanAudioPlayer {
     }
 
     public synchronized void play(Context context, String prayerName, String adhanType) {
+        play(context, prayerName, adhanType, false);
+    }
+
+    public synchronized void play(Context context, String prayerName, String adhanType, boolean isTest) {
         if ("silent".equalsIgnoreCase(adhanType)) {
             Log.d(TAG, "Adhan type is silent, skipping audio playback.");
             return;
@@ -82,23 +86,29 @@ public class AdhanAudioPlayer {
         long now = System.currentTimeMillis();
         String effectivePrayerName = (prayerName != null && !prayerName.trim().isEmpty()) ? prayerName : "الصلاة";
 
-        // If already playing or preparing, do NOT restart from the beginning. Keep the current playback running.
-        if (isAdhanPlaying()) {
-            Log.d(TAG, "Adhan is already actively playing for " + currentPrayerName + ", ignoring redundant play call.");
-            return;
+        // Automatic prayer adhan duplicate protection (kept strictly unchanged for real scheduled adhans)
+        if (!isTest) {
+            // If already playing or preparing, do NOT restart from the beginning. Keep the current playback running.
+            if (isAdhanPlaying()) {
+                Log.d(TAG, "Adhan is already actively playing for " + currentPrayerName + ", ignoring redundant play call.");
+                return;
+            }
+
+            // Prevent repeat triggers for the same prayer within cooldown window
+            if (now - lastPlayStartTimeMs < COOLDOWN_MS && effectivePrayerName.equals(currentPrayerName)) {
+                Log.d(TAG, "Adhan for " + effectivePrayerName + " was started within the last 3 minutes, ignoring repeat call.");
+                return;
+            }
         }
 
-        // Prevent repeat triggers for the same prayer within cooldown window
-        if (now - lastPlayStartTimeMs < COOLDOWN_MS && effectivePrayerName.equals(currentPrayerName)) {
-            Log.d(TAG, "Adhan for " + effectivePrayerName + " was started within the last 3 minutes, ignoring repeat call.");
-            return;
-        }
-
+        // For manual test playback (or new prayer), stop any existing playback completely and start fresh from 0:00
         stopPlaybackInternal(context);
 
         try {
             isPreparing = true;
-            lastPlayStartTimeMs = now;
+            if (!isTest) {
+                lastPlayStartTimeMs = now;
+            }
             currentPrayerName = effectivePrayerName;
 
             // 1. Acquire WakeLock to keep CPU awake while Adhan plays

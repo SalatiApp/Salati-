@@ -25,9 +25,10 @@ public class AdhanPlugin extends Plugin {
     public void playAdhan(PluginCall call) {
         String prayerName = call.getString("prayerName", "الصلاة");
         String adhanType = call.getString("adhanType", "full");
+        boolean isTest = Boolean.TRUE.equals(call.getBoolean("isTest"));
         Context context = getContext();
 
-        AdhanAudioPlayer.getInstance().play(context, prayerName, adhanType);
+        AdhanAudioPlayer.getInstance().play(context, prayerName, adhanType, isTest);
 
         JSObject ret = new JSObject();
         ret.put("success", true);

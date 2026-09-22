@@ -184,7 +184,7 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
       setIsPlayingTestAdhan(true);
 
       try {
-        await soundManager.playAdhan(settings.adhanType);
+        await soundManager.playAdhan(settings.adhanType, undefined, undefined, true);
       } finally {
         setIsPlayingTestAdhan(false);
       }

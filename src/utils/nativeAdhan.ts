@@ -1,7 +1,7 @@
 import { registerPlugin, Capacitor } from '@capacitor/core';
 
 export interface AdhanNativePlugin {
-  playAdhan(options: { prayerName?: string; adhanType?: string }): Promise<{ success: boolean }>;
+  playAdhan(options: { prayerName?: string; adhanType?: string; isTest?: boolean }): Promise<{ success: boolean }>;
   stopAdhan(): Promise<{ success: boolean }>;
   isAdhanPlaying(): Promise<{ isPlaying: boolean; prayerName?: string }>;
   schedulePrayerAlarms(options: {

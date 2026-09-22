@@ -91,8 +91,11 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
       setIsPlayingAdhan(false);
     } else {
       setIsPlayingAdhan(true);
-      await soundManager.playAdhan('full', effectiveNextPrayer?.id);
-      setIsPlayingAdhan(false);
+      try {
+        await soundManager.playAdhan('full', effectiveNextPrayer?.id, undefined, true);
+      } finally {
+        setIsPlayingAdhan(false);
+      }
     }
   };
 
