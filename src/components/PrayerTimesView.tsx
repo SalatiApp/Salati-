@@ -100,7 +100,7 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
   };
 
   return (
-    <div className="w-full space-y-3 pb-1.5 animate-fadeIn">
+    <div className="w-full space-y-2.5 sm:space-y-3 animate-fadeIn">
       {/* Hero Card: Next Prayer & Countdown */}
       <div className="w-full relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#042f2e] text-white shadow-lg border border-emerald-600/40 p-3.5 sm:p-5">
         {/* Subtle geometric pattern */}
@@ -311,7 +311,7 @@ export const PrayerTimesView: React.FC<PrayerTimesViewProps> = ({
       </div>
 
       {/* 4. Spiritual Quran Verse Card: At the very bottom with dark, clear background */}
-      <div className="w-full rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#042f2e] via-[#064e3b] to-[#022c22] text-white p-4 sm:p-5 border border-emerald-500/40 shadow-lg text-center relative overflow-hidden">
+      <div className="w-full rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#042f2e] via-[#064e3b] to-[#022c22] text-white p-3.5 sm:p-4.5 border border-emerald-500/40 shadow-lg text-center relative overflow-hidden">
         {/* Subtle geometric pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px] opacity-10 pointer-events-none" />
 

@@ -499,8 +499,8 @@ export default function App() {
       />
 
       <main
-        className={`w-full max-w-xl mx-auto px-2.5 sm:px-4 py-2.5 transition-all duration-200 ${
-          showAdBanner ? 'pb-40 sm:pb-44' : 'pb-24 sm:pb-28'
+        className={`w-full max-w-xl mx-auto px-2.5 sm:px-4 py-2 sm:py-2.5 transition-all duration-200 ${
+          showAdBanner ? 'pb-[136px] sm:pb-[144px]' : 'pb-[76px] sm:pb-[84px]'
         }`}
       >
         {renderCurrentView()}
