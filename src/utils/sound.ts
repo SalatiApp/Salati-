@@ -268,19 +268,6 @@ class SoundManager {
 
         this.currentAudio = audio;
 
-        // In Android WebView, pulling down the Notification Shade / Quick Settings can emit a pause event
-        // to HTMLMediaElement even though playback was intentionally started and should keep running.
-        // If a pause occurs without user explicitly calling stopAudio(), automatically resume it.
-        audio.onpause = () => {
-          if (this.activeSessionId === sessionId && !audio.ended && audio.currentTime > 0) {
-            setTimeout(() => {
-              if (this.activeSessionId === sessionId && audio.paused && !audio.ended) {
-                audio.play().catch(() => {});
-              }
-            }, 50);
-          }
-        };
-
         audio.onended = () => {
           if (this.activeSessionId === sessionId) {
             finish();
