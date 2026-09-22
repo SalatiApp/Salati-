@@ -311,9 +311,9 @@ async function cancelAzkarNotifications(): Promise<void> {
       idsToCancel.push(...azkarNotifications);
     }
 
-    // Also proactively cancel all potential IDs in the 14-day window
-    // to guarantee no duplicate or orphan alarms remain
-    for (let dayOffset = 0; dayOffset < 15; dayOffset++) {
+    // Proactively cancel all potential IDs in a 30-day window
+    // to guarantee no old 07:00 / 18:00 duplicate or orphan alarms remain
+    for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
       const morningId = MORNING_AZKAR_START_ID + dayOffset;
       const eveningId = EVENING_AZKAR_START_ID + dayOffset;
       if (!idsToCancel.some(item => item.id === morningId)) {
@@ -372,14 +372,14 @@ export async function scheduleAutomaticAzkarNotifications(
       dayOffset++
     ) {
       /*
-       * Morning Azkar - 07:00
+       * Morning Azkar - 08:00 (Device local time)
        */
       if (morningEnabled) {
         const morningTime = new Date(
           now.getFullYear(),
           now.getMonth(),
           now.getDate() + dayOffset,
-          7,
+          8,
           0,
           0,
           0
@@ -423,14 +423,14 @@ export async function scheduleAutomaticAzkarNotifications(
       }
 
       /*
-       * Evening Azkar - 18:00
+       * Evening Azkar - 19:00 (Device local time)
        */
       if (eveningEnabled) {
         const eveningTime = new Date(
           now.getFullYear(),
           now.getMonth(),
           now.getDate() + dayOffset,
-          18,
+          19,
           0,
           0,
           0

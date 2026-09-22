@@ -287,7 +287,7 @@ export default function App() {
   // Automatic prayer + Azkar notifications
   // ---------------------------------------------------------
 
-  const currentDateKey = `${currentCity.latitude}_${currentCity.longitude}_${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+  const currentDateKey = `${currentCity.latitude}_${currentCity.longitude}_${now.getFullYear()}-${now.getMonth()}-${now.getDate()}_${now.getTimezoneOffset()}`;
 
   useEffect(() => {
     scheduleAutomaticAdhanAlarms(

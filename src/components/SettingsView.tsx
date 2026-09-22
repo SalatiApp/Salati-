@@ -556,7 +556,7 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
               </span>
 
               <span className="text-xs text-slate-400">
-                تنبيه يومياً الساعة 07:00
+                تنبيه يومياً الساعة 08:00
               </span>
             </div>
 
@@ -603,7 +603,7 @@ const SettingsViewComponent: React.FC<SettingsViewProps> = ({
               </span>
 
               <span className="text-xs text-slate-400">
-                تنبيه يومياً الساعة 18:00
+                تنبيه يومياً الساعة 19:00
               </span>
             </div>
 
