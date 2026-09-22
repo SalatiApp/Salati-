@@ -8,7 +8,7 @@ export function getCalculationParameters(methodKey: CalculationMethodKey, madhab
     case 'Morocco': {
       // Moroccan Ministry of Habous and Islamic Affairs (وزارة الأوقاف والشؤون الإسلامية بالمملكة المغربية)
       // Fajr angle: 19°, Isha angle: 17°, Dhuhr: +5 minutes after zawal (solar transit), Maliki/Shafi Asr
-      params = new CalculationParameters('Morocco', 19, 17);
+      params = new CalculationParameters('Other', 19, 17);
       params.methodAdjustments.dhuhr = 5;
       params.madhab = Madhab.Shafi;
       return params;

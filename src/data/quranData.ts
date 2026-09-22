@@ -1,4 +1,5 @@
-import { SurahDetail, SurahMeta } from '../types';
+import { SurahDetail, SurahMeta, AyahItem } from '../types';
+import quranAllData from './quran_all.json';
 
 export const ALL_SURAHS: SurahMeta[] = [
   { number: 1, nameAr: 'الفَاتِحَة', nameEn: 'Al-Fatihah', englishTranslation: 'The Opening', numberOfAyahs: 7, revelationType: 'Meccan', page: 1 },
@@ -260,44 +261,132 @@ export const EMBEDDED_SURAHS: Record<number, SurahDetail> = {
   },
 };
 
-// Safe zero-cost online Quran loader using public free AlQuran Cloud API
-export async function fetchFullSurah(surahNumber: number): Promise<SurahDetail | null> {
-  // If already embedded, return immediately for super fast offline load
-  if (EMBEDDED_SURAHS[surahNumber] && EMBEDDED_SURAHS[surahNumber].ayahs.length >= (ALL_SURAHS.find(s => s.number === surahNumber)?.numberOfAyahs || 0)) {
-    return EMBEDDED_SURAHS[surahNumber];
+const ALL_SURAHS_MAP = new Map<number, SurahMeta>();
+ALL_SURAHS.forEach((s) => ALL_SURAHS_MAP.set(s.number, s));
+
+const SURAH_CACHE = new Map<number, SurahDetail>();
+
+interface RawJsonVerse {
+  id: number;
+  text: string;
+  translation?: string;
+}
+
+interface RawJsonSurah {
+  id: number;
+  name: string;
+  transliteration: string;
+  translation: string;
+  type: string;
+  total_verses: number;
+  verses: RawJsonVerse[];
+}
+
+/**
+ * Returns full SurahDetail synchronously and instantly (0ms) from bundled Quran data.
+ */
+export function getFullSurahSync(surahNumber: number): SurahDetail | null {
+  if (SURAH_CACHE.has(surahNumber)) {
+    return SURAH_CACHE.get(surahNumber)!;
   }
 
+  const meta = ALL_SURAHS_MAP.get(surahNumber);
+  if (!meta) return null;
+
+  // 1. Check embedded surahs if complete
+  const embedded = EMBEDDED_SURAHS[surahNumber];
+  if (embedded && embedded.ayahs.length >= meta.numberOfAyahs) {
+    SURAH_CACHE.set(surahNumber, embedded);
+    return embedded;
+  }
+
+  // 2. Load from bundled quranAllData
+  const rawData = (quranAllData as unknown as Record<string, RawJsonSurah>)[String(surahNumber)];
+  if (rawData && rawData.verses && rawData.verses.length > 0) {
+    const ayahs: AyahItem[] = rawData.verses.map((v) => ({
+      numberInSurah: v.id,
+      text: v.text,
+      translation: v.translation || '',
+    }));
+
+    const detail: SurahDetail = {
+      ...meta,
+      ayahs,
+    };
+    SURAH_CACHE.set(surahNumber, detail);
+    return detail;
+  }
+
+  return embedded || null;
+}
+
+/**
+ * Loads full SurahDetail instantly with multi-layer fallback.
+ */
+export async function fetchFullSurah(surahNumber: number): Promise<SurahDetail | null> {
+  // 1. Instant sync retrieval from bundled data
+  const syncSurah = getFullSurahSync(surahNumber);
+  if (syncSurah && syncSurah.ayahs.length > 0) {
+    return syncSurah;
+  }
+
+  // 2. Try local static asset in public/data/surahs/{surahNumber}.json
+  try {
+    const baseUrl = typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : './';
+    const res = await fetch(`${baseUrl}data/surahs/${surahNumber}.json`);
+    if (res.ok) {
+      const rawData: RawJsonSurah = await res.json();
+      const meta = ALL_SURAHS_MAP.get(surahNumber);
+      if (meta && rawData.verses) {
+        const detail: SurahDetail = {
+          ...meta,
+          ayahs: rawData.verses.map((v) => ({
+            numberInSurah: v.id,
+            text: v.text,
+            translation: v.translation || '',
+          })),
+        };
+        SURAH_CACHE.set(surahNumber, detail);
+        return detail;
+      }
+    }
+  } catch {}
+
+  // 3. Fallback online AlQuran Cloud API
   try {
     const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.sahih`);
-    if (!res.ok) throw new Error('Failed to fetch from Quran API');
-    const json = await res.json();
-    if (json.code === 200 && Array.isArray(json.data) && json.data.length >= 2) {
-      const arabicData = json.data[0];
-      const englishData = json.data[1];
-      const meta = ALL_SURAHS.find(s => s.number === surahNumber) || {
-        number: surahNumber,
-        nameAr: arabicData.name,
-        nameEn: arabicData.englishName,
-        englishTranslation: arabicData.englishNameTranslation,
-        numberOfAyahs: arabicData.numberOfAyahs,
-        revelationType: arabicData.revelationType as 'Meccan' | 'Medinan',
-        page: 1,
-      };
+    if (res.ok) {
+      const json = await res.json();
+      if (json.code === 200 && Array.isArray(json.data) && json.data.length >= 2) {
+        const arabicData = json.data[0];
+        const englishData = json.data[1];
+        const meta = ALL_SURAHS_MAP.get(surahNumber) || {
+          number: surahNumber,
+          nameAr: arabicData.name,
+          nameEn: arabicData.englishName,
+          englishTranslation: arabicData.englishNameTranslation,
+          numberOfAyahs: arabicData.numberOfAyahs,
+          revelationType: arabicData.revelationType as 'Meccan' | 'Medinan',
+          page: 1,
+        };
 
-      const ayahs: SurahDetail['ayahs'] = arabicData.ayahs.map((ayah: { numberInSurah: number; text: string; number: number }, idx: number) => ({
-        numberInSurah: ayah.numberInSurah,
-        text: ayah.text,
-        translation: englishData.ayahs[idx]?.text || '',
-        numberInQuran: ayah.number,
-      }));
+        const ayahs: AyahItem[] = arabicData.ayahs.map((ayah: { numberInSurah: number; text: string; number: number }, idx: number) => ({
+          numberInSurah: ayah.numberInSurah,
+          text: ayah.text,
+          translation: englishData.ayahs[idx]?.text || '',
+          numberInQuran: ayah.number,
+        }));
 
-      return {
-        ...meta,
-        ayahs,
-      };
+        const detail: SurahDetail = {
+          ...meta,
+          ayahs,
+        };
+        SURAH_CACHE.set(surahNumber, detail);
+        return detail;
+      }
     }
   } catch (err) {
-    console.warn('Network fetch for Surah failed, falling back to embedded:', err);
+    console.warn('Network fetch for Surah failed, falling back:', err);
   }
 
   return EMBEDDED_SURAHS[surahNumber] || null;

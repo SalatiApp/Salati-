@@ -14,7 +14,7 @@ import {
   Sparkles,
   Play
 } from 'lucide-react';
-import { ALL_SURAHS, EMBEDDED_SURAHS, fetchFullSurah } from '../data/quranData';
+import { ALL_SURAHS, EMBEDDED_SURAHS, fetchFullSurah, getFullSurahSync } from '../data/quranData';
 import { SurahDetail, SurahMeta } from '../types';
 import { matchSurah, getSurahMatchScore } from '../utils/arabicSearch';
 
@@ -79,29 +79,30 @@ export const QuranView: React.FC<QuranViewProps> = ({ initialFontSize = 24 }) =>
     return list;
   }, [searchQuery, selectedFilter]);
 
-  const handleOpenSurah = async (meta: SurahMeta) => {
-    setIsLoadingSurah(true);
-    // If embedded, load instantly
-    if (EMBEDDED_SURAHS[meta.number]) {
-      setActiveSurah(EMBEDDED_SURAHS[meta.number]);
-      setIsLoadingSurah(false);
+  const handleOpenSurah = (meta: SurahMeta) => {
+    if (audioElement) {
+      audioElement.pause();
+    }
+    setIsPlayingAudio(false);
+
+    // 1. Instant 0ms synchronous retrieval from pre-bundled authentic Quran data
+    const instantSurah = getFullSurahSync(meta.number);
+    if (instantSurah && instantSurah.ayahs && instantSurah.ayahs.length > 0) {
+      setActiveSurah(instantSurah);
       return;
     }
 
-    // Otherwise fetch
-    const surah = await fetchFullSurah(meta.number);
-    if (surah) {
-      setActiveSurah(surah);
-    } else {
-      // Fallback display minimal placeholder
-      setActiveSurah({
-        ...meta,
-        ayahs: [
-          { numberInSurah: 1, text: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', translation: 'In the name of Allah' },
-        ],
+    // 2. Fallback async fetch if not already in memory
+    setIsLoadingSurah(true);
+    fetchFullSurah(meta.number)
+      .then((surah) => {
+        if (surah) {
+          setActiveSurah(surah);
+        }
+      })
+      .finally(() => {
+        setIsLoadingSurah(false);
       });
-    }
-    setIsLoadingSurah(false);
   };
 
   const handleCopyAyah = (ayahNumber: number, text: string) => {
