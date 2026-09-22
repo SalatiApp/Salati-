@@ -17,6 +17,7 @@ import {
 import { ALL_SURAHS, EMBEDDED_SURAHS, fetchFullSurah, getFullSurahSync } from '../data/quranData';
 import { SurahDetail, SurahMeta } from '../types';
 import { matchSurah, getSurahMatchScore } from '../utils/arabicSearch';
+import { quranAudioManager, QuranAudioState } from '../utils/quranAudio';
 
 interface QuranViewProps {
   initialFontSize?: number;
@@ -38,20 +39,26 @@ export const QuranView: React.FC<QuranViewProps> = ({ initialFontSize = 24 }) =>
     return saved ? JSON.parse(saved).ayah : null;
   });
 
-  // Audio recitation state
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  // Audio recitation state synchronized with quranAudioManager
+  const [audioState, setAudioState] = useState<QuranAudioState>(() => quranAudioManager.getState());
 
   const POPULAR_NUMBERS = [1, 18, 36, 55, 56, 67, 112, 113, 114];
 
-  // Stop audio on unmount or surah close
+  // Subscribe to audio events and stop audio on QuranView unmount (e.g. switching tabs)
+  useEffect(() => {
+    const unsubscribe = quranAudioManager.subscribe(setAudioState);
+    return () => {
+      unsubscribe();
+      quranAudioManager.stop();
+    };
+  }, []);
+
+  // Stop and release audio automatically whenever the surah is closed or switched
   useEffect(() => {
     return () => {
-      if (audioElement) {
-        audioElement.pause();
-      }
+      quranAudioManager.stop();
     };
-  }, [audioElement]);
+  }, [activeSurah?.number]);
 
   const filteredSurahs = useMemo(() => {
     const list = ALL_SURAHS.filter((s) => {
@@ -80,10 +87,7 @@ export const QuranView: React.FC<QuranViewProps> = ({ initialFontSize = 24 }) =>
   }, [searchQuery, selectedFilter]);
 
   const handleOpenSurah = (meta: SurahMeta) => {
-    if (audioElement) {
-      audioElement.pause();
-    }
-    setIsPlayingAudio(false);
+    quranAudioManager.stop();
 
     // 1. Instant 0ms synchronous retrieval from pre-bundled authentic Quran data
     const instantSurah = getFullSurahSync(meta.number);
@@ -124,34 +128,17 @@ export const QuranView: React.FC<QuranViewProps> = ({ initialFontSize = 24 }) =>
     setBookmarkedAyah(ayahNumber);
   };
 
-  const handlePlayRecitation = () => {
-    if (isPlayingAudio && audioElement) {
-      audioElement.pause();
-      setIsPlayingAudio(false);
-      return;
-    }
+  const isCurrentSurahPlaying = audioState.isPlaying && audioState.surahNumber === activeSurah?.number;
+  const isCurrentSurahLoading = audioState.isLoading && audioState.surahNumber === activeSurah?.number;
 
+  const handleToggleRecitation = () => {
     if (!activeSurah) return;
 
-    // Public domain/open high-speed CDN for complete Surah recitation (Sheikh Mishary Rashid Alafasy)
-    const padded = String(activeSurah.number).padStart(3, '0');
-    const audioUrl = `https://server8.mp3quran.net/afs/${padded}.mp3`;
-    
-    if (audioElement) {
-      audioElement.pause();
+    if (isCurrentSurahPlaying || isCurrentSurahLoading) {
+      quranAudioManager.stop();
+    } else {
+      quranAudioManager.play(activeSurah.number);
     }
-
-    const audio = new Audio(audioUrl);
-    audio.play()
-      .then(() => {
-        setIsPlayingAudio(true);
-        setAudioElement(audio);
-        audio.onended = () => setIsPlayingAudio(false);
-      })
-      .catch((e) => {
-        console.warn('Audio recitation playback error:', e);
-        setIsPlayingAudio(false);
-      });
   };
 
   const getReadingBackground = () => {
@@ -282,8 +269,7 @@ export const QuranView: React.FC<QuranViewProps> = ({ initialFontSize = 24 }) =>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
-                  if (audioElement) audioElement.pause();
-                  setIsPlayingAudio(false);
+                  quranAudioManager.stop();
                   setActiveSurah(null);
                 }}
                 className="p-1.5 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 transition"
@@ -302,23 +288,30 @@ export const QuranView: React.FC<QuranViewProps> = ({ initialFontSize = 24 }) =>
             {/* Audio Recitation Button */}
             <div className="flex items-center gap-2">
               <button
-                onClick={handlePlayRecitation}
+                onClick={handleToggleRecitation}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm ${
-                  isPlayingAudio
+                  isCurrentSurahPlaying
                     ? 'bg-amber-400 text-slate-900 animate-pulse'
+                    : isCurrentSurahLoading
+                    ? 'bg-emerald-700/90 text-white cursor-wait opacity-90'
                     : 'bg-emerald-700/80 hover:bg-emerald-600 text-white border border-emerald-600/50'
                 }`}
                 title="تلاوة الشيخ مشاري العفاسي"
               >
-                {isPlayingAudio ? (
+                {isCurrentSurahPlaying ? (
                   <>
                     <Square className="w-3.5 h-3.5 fill-current" />
                     <span>إيقاف التلاوة</span>
                   </>
+                ) : isCurrentSurahLoading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>جاري التحميل...</span>
+                  </>
                 ) : (
                   <>
                     <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>استماع للتلاوة</span>
+                    <span>سماع القرآن</span>
                   </>
                 )}
               </button>
