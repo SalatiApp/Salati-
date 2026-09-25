@@ -8,8 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.PowerManager;
@@ -37,8 +35,6 @@ public class AdhanAudioPlayer {
 
     private MediaPlayer mediaPlayer;
     private PowerManager.WakeLock wakeLock;
-    private AudioManager audioManager;
-    private AudioFocusRequest audioFocusRequest;
     private volatile boolean isPlaying = false;
     private volatile boolean isPreparing = false;
     private long lastPlayStartTimeMs = 0;
@@ -115,36 +111,17 @@ public class AdhanAudioPlayer {
                 wakeLock.acquire(6 * 60 * 1000L);
             }
 
-            // 2. Setup AudioFocus with USAGE_ALARM
-            audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            // 2. Setup AudioAttributes with USAGE_ALARM
+            // Note: We deliberately do NOT request transient duckable AudioFocus here.
+            // In Android, requesting AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK with delayed focus gain causes
+            // the system AudioPolicy to pause/duck and restart MediaPlayer playback whenever
+            // lift-to-wake, ambient display, motion gestures, fingerprint unlock, screen lock/unlock,
+            // or notification shade sounds occur. By avoiding this focus binding, MediaPlayer plays
+            // directly and continuously via USAGE_ALARM until completion or manual stop.
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .build();
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                    .setAudioAttributes(audioAttributes)
-                    .setAcceptsDelayedFocusGain(true)
-                    .setWillPauseWhenDucked(false)
-                    .setOnAudioFocusChangeListener(focusChange -> {
-                        // Under user requirements: Phone movement, shake, or transient focus changes
-                        // must NOT cause pause, resume, or restart of Adhan.
-                        // Playback continues steadily until completion or manual stop from notification.
-                        Log.d(TAG, "AudioFocus change received: " + focusChange + " - preserving continuous playback.");
-                    })
-                    .build();
-
-                if (audioManager != null) {
-                    audioManager.requestAudioFocus(audioFocusRequest);
-                }
-            } else if (audioManager != null) {
-                audioManager.requestAudioFocus(
-                    focusChange -> Log.d(TAG, "AudioFocus change received (pre-O): " + focusChange),
-                    AudioManager.STREAM_ALARM,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
-                );
-            }
 
             // 3. Initialize MediaPlayer with local raw resource
             mediaPlayer = new MediaPlayer();
@@ -224,15 +201,6 @@ public class AdhanAudioPlayer {
                 }
             } catch (Exception ignored) {}
             wakeLock = null;
-        }
-
-        if (audioManager != null) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioFocusRequest != null) {
-                    audioManager.abandonAudioFocusRequest(audioFocusRequest);
-                    audioFocusRequest = null;
-                }
-            } catch (Exception ignored) {}
         }
     }
 
