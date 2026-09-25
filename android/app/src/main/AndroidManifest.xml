@@ -58,7 +58,17 @@
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <uses-feature android:name="android.hardware.location.network" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.magnetometer" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <!-- Screen Support for Amazon Fire Tablets (7", 8", 10", 11") and Handhelds -->
+    <supports-screens
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true"
+        android:anyDensity="true" />
 
     <!-- Permissions for Prayer Times, Adhan & Qibla -->
     <uses-permission android:name="android.permission.INTERNET" />
