@@ -16,10 +16,25 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("KEYSTORE_PATH") ?: (project.hasProperty("SALATI_RELEASE_STORE_FILE") ? project.property("SALATI_RELEASE_STORE_FILE") : "")
+            if (keystorePath && file(keystorePath).exists()) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("KEYSTORE_PASSWORD") ?: (project.hasProperty("SALATI_RELEASE_STORE_PASSWORD") ? project.property("SALATI_RELEASE_STORE_PASSWORD") : "")
+                keyAlias System.getenv("KEY_ALIAS") ?: (project.hasProperty("SALATI_RELEASE_KEY_ALIAS") ? project.property("SALATI_RELEASE_KEY_ALIAS") : "")
+                keyPassword System.getenv("KEY_PASSWORD") ?: (project.hasProperty("SALATI_RELEASE_KEY_PASSWORD") ? project.property("SALATI_RELEASE_KEY_PASSWORD") : "")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            def keystorePath = System.getenv("KEYSTORE_PATH") ?: (project.hasProperty("SALATI_RELEASE_STORE_FILE") ? project.property("SALATI_RELEASE_STORE_FILE") : "")
+            if (keystorePath && file(keystorePath).exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
