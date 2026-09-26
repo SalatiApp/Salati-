@@ -19,16 +19,16 @@ android {
 
     signingConfigs {
         release {
-            def keystorePath = System.getenv("KEYSTORE_PATH")
-            def keystorePassword = System.getenv("KEYSTORE_PASSWORD")
-            def keyAlias = System.getenv("KEY_ALIAS")
-            def keyPassword = System.getenv("KEY_PASSWORD")
+            def ksPath = System.getenv("KEYSTORE_PATH")
+            def ksPassword = System.getenv("KEYSTORE_PASSWORD")
+            def aliasName = System.getenv("KEY_ALIAS")
+            def aliasPassword = System.getenv("KEY_PASSWORD")
 
-            if (keystorePath && keystorePassword && keyAlias && keyPassword) {
-                storeFile file(keystorePath)
-                storePassword keystorePassword
-                this.keyAlias keyAlias
-                this.keyPassword keyPassword
+            if (ksPath && ksPassword && aliasName && aliasPassword) {
+                storeFile = file(ksPath)
+                storePassword = ksPassword
+                keyAlias = aliasName
+                keyPassword = aliasPassword
             }
         }
     }
@@ -37,12 +37,12 @@ android {
         release {
             minifyEnabled false
 
-            def keystorePath = System.getenv("KEYSTORE_PATH")
-            def keystorePassword = System.getenv("KEYSTORE_PASSWORD")
-            def keyAlias = System.getenv("KEY_ALIAS")
-            def keyPassword = System.getenv("KEY_PASSWORD")
+            def ksPath = System.getenv("KEYSTORE_PATH")
+            def ksPassword = System.getenv("KEYSTORE_PASSWORD")
+            def aliasName = System.getenv("KEY_ALIAS")
+            def aliasPassword = System.getenv("KEY_PASSWORD")
 
-            if (keystorePath && keystorePassword && keyAlias && keyPassword) {
+            if (ksPath && ksPassword && aliasName && aliasPassword) {
                 signingConfig signingConfigs.release
             }
 
