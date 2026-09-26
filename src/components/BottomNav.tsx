@@ -37,8 +37,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       id="app-bottom-navigation"
       className="fixed bottom-0 left-0 right-0 z-30 flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-emerald-100/90 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]"
     >
-      {/* 1. شريط التنقل السفلي - مصغر بنسبة 10% مع الحفاظ على التوازن والراحة */}
-      <div className="w-full max-w-xl mx-auto flex items-center justify-around px-2 pt-1.5 pb-1">
+      {/* 1. شريط التنقل السفلي - مصغر قليلاً مع الحفاظ على وضوح الأيقونات والنصوص */}
+      <div className="w-full max-w-xl mx-auto flex items-center justify-around px-2 pt-1 pb-0.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
@@ -46,7 +46,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <button
               key={item.id}
               onClick={() => handleTabSelect(item.id)}
-              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-2xl transition-all duration-200 relative min-h-[52px] active:scale-95 ${
+              className={`flex flex-col items-center justify-center flex-1 py-0.5 px-0.5 rounded-xl transition-all duration-200 relative min-h-[46px] active:scale-95 ${
                 isActive
                   ? 'text-emerald-700 dark:text-emerald-400 font-bold'
                   : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium'
@@ -56,15 +56,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 <div className="absolute -top-0.5 w-7 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full shadow-xs" />
               )}
               <div
-                className={`p-1 rounded-xl transition-all duration-200 ${
+                className={`p-0.5 rounded-lg transition-all duration-200 ${
                   isActive
                     ? 'bg-emerald-50 dark:bg-emerald-950/70 scale-105 text-emerald-700 dark:text-emerald-400 shadow-xs'
                     : 'hover:bg-slate-100/60 dark:hover:bg-slate-800/40'
                 }`}
               >
-                <Icon className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2]" />
+                <Icon className="w-[19px] h-[19px] sm:w-5 sm:h-5 stroke-[2]" />
               </div>
-              <span className="text-[10px] mt-0.5 tracking-tight font-tajawal font-medium leading-none">{item.labelAr}</span>
+              <span className="text-[9.5px] mt-0.5 tracking-tight font-tajawal font-medium leading-none">{item.labelAr}</span>
             </button>
           );
         })}
@@ -90,7 +90,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           </div>
         </div>
       ) : (
-        <div className="pb-[env(safe-area-inset-bottom,0.75rem)]" />
+        <div className="pb-[env(safe-area-inset-bottom,0.4rem)]" />
       )}
     </nav>
   );
