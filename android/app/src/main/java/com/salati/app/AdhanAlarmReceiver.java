@@ -36,7 +36,8 @@ public class AdhanAlarmReceiver extends BroadcastReceiver {
             }
 
             Log.d(TAG, "Triggering native Adhan playback for: " + prayerName + " (type=" + adhanType + ")");
-            AdhanAudioPlayer.getInstance().play(context, prayerName, adhanType);
+            Context appContext = context.getApplicationContext() != null ? context.getApplicationContext() : context;
+            AdhanAudioPlayer.getInstance().play(appContext, prayerName, adhanType);
         } catch (Exception e) {
             Log.e(TAG, "Error handling Adhan alarm broadcast", e);
         } finally {

@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.PowerManager;
@@ -35,6 +37,8 @@ public class AdhanAudioPlayer {
 
     private MediaPlayer mediaPlayer;
     private PowerManager.WakeLock wakeLock;
+    private AudioManager audioManager;
+    private AudioFocusRequest audioFocusRequest;
     private volatile boolean isPlaying = false;
     private volatile boolean isPreparing = false;
     private long lastPlayStartTimeMs = 0;
@@ -102,8 +106,10 @@ public class AdhanAudioPlayer {
             }
             currentPrayerName = effectivePrayerName;
 
+            Context appContext = context.getApplicationContext() != null ? context.getApplicationContext() : context;
+
             // 1. Acquire WakeLock to keep CPU awake while Adhan plays
-            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            PowerManager powerManager = (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
             if (powerManager != null) {
                 wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Salati:AdhanAudioWakeLock");
                 wakeLock.setReferenceCounted(false);
@@ -111,29 +117,38 @@ public class AdhanAudioPlayer {
                 wakeLock.acquire(6 * 60 * 1000L);
             }
 
-            // 2. Setup AudioAttributes with USAGE_ALARM
-            // Note: We deliberately do NOT request transient duckable AudioFocus here.
-            // In Android, requesting AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK with delayed focus gain causes
-            // the system AudioPolicy to pause/duck and restart MediaPlayer playback whenever
-            // lift-to-wake, ambient display, motion gestures, fingerprint unlock, screen lock/unlock,
-            // or notification shade sounds occur. By avoiding this focus binding, MediaPlayer plays
-            // directly and continuously via USAGE_ALARM until completion or manual stop.
-            AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .build();
+            // 2. Setup AudioAttributes
+            // For automatic Adhan (isTest == false):
+            // We use USAGE_MEDIA so Android's OEM motion/gesture systems ("Pick up to silence",
+            // "Mute with gestures", "Flip to mute") and fingerprint unlock interactions
+            // DO NOT silence or pause the Adhan audio stream when the device is moved, tilted, or unlocked.
+            // For manual test Adhan (isTest == true):
+            // Kept strictly as USAGE_ALARM to ensure Test Adhan behavior remains 100% untouched.
+            AudioAttributes.Builder audioAttributesBuilder = new AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC);
+            if (isTest) {
+                audioAttributesBuilder.setUsage(AudioAttributes.USAGE_ALARM);
+            } else {
+                audioAttributesBuilder.setUsage(AudioAttributes.USAGE_MEDIA);
+            }
+            AudioAttributes audioAttributes = audioAttributesBuilder.build();
 
-            // 3. Initialize MediaPlayer with local raw resource
+            // 3. AudioFocus management for automatic Adhan
+            if (!isTest) {
+                requestAutomaticAdhanAudioFocus(appContext, audioAttributes);
+            }
+
+            // 4. Initialize MediaPlayer with local raw resource
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setAudioAttributes(audioAttributes);
-            mediaPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK);
+            mediaPlayer.setWakeMode(appContext, PowerManager.PARTIAL_WAKE_LOCK);
 
-            AssetFileDescriptor afd = context.getResources().openRawResourceFd(R.raw.adhan);
+            AssetFileDescriptor afd = appContext.getResources().openRawResourceFd(R.raw.adhan);
             if (afd != null) {
                 mediaPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
                 afd.close();
             } else {
-                mediaPlayer = MediaPlayer.create(context, R.raw.adhan);
+                mediaPlayer = MediaPlayer.create(appContext, R.raw.adhan);
             }
 
             mediaPlayer.setOnPreparedListener(mp -> {
@@ -145,21 +160,21 @@ public class AdhanAudioPlayer {
                     mp.setVolume(1.0f, 1.0f);
                     mp.start();
                     Log.d(TAG, "Native Adhan playback started successfully for: " + currentPrayerName);
-                    showOngoingAdhanNotification(context, currentPrayerName);
+                    showOngoingAdhanNotification(appContext, currentPrayerName);
                 } catch (Exception e) {
                     Log.e(TAG, "Error starting MediaPlayer in onPrepared", e);
-                    stop(context);
+                    stop(appContext);
                 }
             });
 
             mediaPlayer.setOnCompletionListener(mp -> {
                 Log.d(TAG, "Adhan playback completed naturally to the end.");
-                stop(context);
+                stop(appContext);
             });
 
             mediaPlayer.setOnErrorListener((mp, what, extra) -> {
                 Log.e(TAG, "MediaPlayer error occurred: what=" + what + ", extra=" + extra);
-                stop(context);
+                stop(appContext);
                 return true;
             });
 
@@ -180,6 +195,8 @@ public class AdhanAudioPlayer {
         isPreparing = false;
         isPlaying = false;
         currentPrayerName = "";
+
+        abandonAutomaticAdhanAudioFocus();
 
         if (mediaPlayer != null) {
             try {
@@ -202,6 +219,51 @@ public class AdhanAudioPlayer {
             } catch (Exception ignored) {}
             wakeLock = null;
         }
+    }
+
+    private void requestAutomaticAdhanAudioFocus(Context context, AudioAttributes audioAttributes) {
+        try {
+            audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            if (audioManager == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    .setAudioAttributes(audioAttributes)
+                    .setAcceptsDelayedFocusGain(false)
+                    .setOnAudioFocusChangeListener(focusChange -> {
+                        Log.d(TAG, "AudioFocus change received: " + focusChange);
+                        if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+                            stop(context);
+                        }
+                    })
+                    .build();
+                audioManager.requestAudioFocus(audioFocusRequest);
+            } else {
+                audioManager.requestAudioFocus(
+                    focusChange -> {
+                        if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+                            stop(context);
+                        }
+                    },
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+                );
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Could not request audio focus for automatic Adhan", e);
+        }
+    }
+
+    private void abandonAutomaticAdhanAudioFocus() {
+        try {
+            if (audioManager != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioFocusRequest != null) {
+                    audioManager.abandonAudioFocusRequest(audioFocusRequest);
+                    audioFocusRequest = null;
+                }
+                audioManager = null;
+            }
+        } catch (Exception ignored) {}
     }
 
     private void showOngoingAdhanNotification(Context context, String prayerName) {

@@ -15,10 +15,19 @@ export default defineConfig(({ command }) => {
         enforce: 'pre',
         transform(code, id) {
           if (id.includes('client.mjs') || id.includes('@vite/client')) {
-            return code.replace(
-              /ws\.send\(JSON\.stringify\(data\)\);/g,
-              'if (ws && typeof ws.send === "function" && ws.readyState === 1) { ws.send(JSON.stringify(data)); }'
-            );
+            return code
+              .replace(
+                /throw new Error\(["']send was called before connect["']\);/g,
+                'return;'
+              )
+              .replace(
+                /throw new Error\(["']invoke was called before connect["']\);/g,
+                'return undefined;'
+              )
+              .replace(
+                /ws\.send\(JSON\.stringify\(data\)\);/g,
+                'if (ws && typeof ws.send === "function" && ws.readyState === 1) { ws.send(JSON.stringify(data)); }'
+              );
           }
         },
       },
